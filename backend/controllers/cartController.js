@@ -21,6 +21,13 @@ const addToCart = async (req, res) => {
         message: "artworkId must be a number and quantity must be at least 1",
       });
     }
+    if (!artworkId || quantity === undefined || quantity === null) {
+      return res.status(400).json({ message: "artworkId and quantity are required" });
+    }
+    
+    if (quantity <= 0) {
+      return res.status(400).json({ message: "Quantity must be at least 1" });
+    }
 
     const existingItem = await prisma.cartItem.findFirst({
       where: {

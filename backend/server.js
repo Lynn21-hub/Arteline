@@ -6,7 +6,19 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors());
+// Debug middleware - logs every incoming request
+app.use((req, res, next) => {
+  console.log(`INCOMING: ${req.method} ${req.path}`);
+  console.log("AUTH HEADER:", req.headers.authorization);
+  next();
+});
+
+app.use(cors({
+  origin: "*",
+  allowedHeaders: ["Content-Type", "Authorization"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+}));
+
 app.use(express.json());
 
 app.get("/", (req, res) => {
