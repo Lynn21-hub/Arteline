@@ -1,27 +1,27 @@
-import React from 'react';
-import { signOut } from 'aws-amplify/auth';
+import React from "react";
 
-function ProfileDropdown({ goToProfile }) {
+function ProfileDropdown({ goToProfile, goToCart }) {
   return (
     <div style={styles.dropdown}>
-      
-      <p style={styles.item} onClick={goToProfile}>
+      <button style={styles.item} onClick={goToProfile}>
         My information
-      </p>
+      </button>
 
-      <p style={styles.item}>Payment settings</p>
-      <p style={styles.item}>My orders</p>
+      <button style={styles.item}>
+        Payment settings
+      </button>
 
-      <p
-        style={{ ...styles.item, color: "red" }}
-        onClick={async () => {
-          await signOut();
-          window.location.reload(); // refresh → user becomes logged out
-        }}
-      >
+      <button style={styles.item} onClick={goToCart}>
+        My cart
+      </button>
+
+      <button style={styles.item}>
+        My orders
+      </button>
+
+      <button style={styles.logout}>
         Logout
-      </p>
-
+      </button>
     </div>
   );
 }
@@ -29,19 +29,36 @@ function ProfileDropdown({ goToProfile }) {
 const styles = {
   dropdown: {
     position: "absolute",
-    top: "50px",
-    right: "20px",
+    top: "48px",
+    right: 0,
+    width: "230px",
     background: "white",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-    borderRadius: "8px",
-    padding: "10px",
-    width: "200px",
+    borderRadius: "14px",
+    boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
+    padding: "12px 0",
     zIndex: 1000,
   },
 
   item: {
-    padding: "10px",
+    width: "100%",
+    background: "none",
+    border: "none",
+    textAlign: "left",
+    padding: "16px 18px",
+    fontSize: "16px",
     cursor: "pointer",
+    color: "#222",
+  },
+
+  logout: {
+    width: "100%",
+    background: "none",
+    border: "none",
+    textAlign: "left",
+    padding: "16px 18px",
+    fontSize: "16px",
+    cursor: "pointer",
+    color: "red",
   },
 };
 

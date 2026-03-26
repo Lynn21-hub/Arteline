@@ -146,42 +146,75 @@ const getCartItems = async (req, res) => {
   }
 };
 
+const updateCartQuantity = async (req, res) => {
+  try {
+    const userId = req.user.sub;
+    const { artworkId, quantity } = req.body;
+
+    if (!artworkId || quantity === undefined || quantity === null) {
+      return res.status(400).json({
+        message: "artworkId and quantity are required",
+      });
+    }
+
+    const artId = Number(artworkId);
+    const qty = Number(quantity);
+
+    if (Number.isNaN(artId) || Number.isNaN(qty)) {
+      return res.status(400).json({
+        message: "artworkId and quantity must be valid numbers",
+      });
+    }
+
+    const existingItem = await prisma.cartItem.findFirst({
+      where: {
+        user_id: userId,
+        artwork_id: artId,
+      },
+    });
+
+    if (!existingItem) {
+      return res.status(404).json({
+        message: "Item not found in cart",
+      });
+    }
+
+    if (qty <= 0) {
+      await prisma.cartItem.delete({
+        where: {
+          id: existingItem.id,
+        },
+      });
+
+      return res.status(200).json({
+        message: "Item removed from cart because quantity reached 0",
+      });
+    }
+
+    const updatedItem = await prisma.cartItem.update({
+      where: {
+        id: existingItem.id,
+      },
+      data: {
+        quantity: qty,
+      },
+    });
+
+    return res.status(200).json({
+      message: "Cart quantity updated successfully",
+      item: updatedItem,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to update cart quantity",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   addToCart,
   removeFromCart,
+  updateCartQuantity,
   getCartItems,
 };
- /*
-Create a Node.js Express cart backend using Prisma and MySQL.
-
-Requirements:
-- Use Prisma ORM only, no raw SQL
-- Expect authenticated user from AWS Cognito JWT
-- JWT comes from Authorization header as Bearer token
-- Verify token and extract "sub"
-- Use "sub" as user_id
-- Never trust user_id from request body
-
-Cart item fields:
-- id
-- user_id
-- artwork_id
-- quantity default 1
-- created_at
-
-Routes to support:
-- POST /cart/add
-- POST /cart/remove
-- GET /cart
-
-Logic:
-- Add to cart:
-  - if item already exists for user and artwork_id, increase quantity
-  - otherwise create new item
-- Remove from cart:
-  - delete item matching authenticated user and artwork_id
-- Get cart:
-  - return all items for authenticated user
-
-Use async/await, proper error handling, and CommonJS exports.
-*/  

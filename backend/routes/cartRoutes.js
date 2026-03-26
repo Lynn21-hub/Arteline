@@ -5,12 +5,14 @@ const {
   addToCart,
   removeFromCart,
   getCartItems,
+  updateCartQuantity
 } = require("../controllers/cartController");
 
 const verifyCognitoToken = require("../middleware/authmiddleware");
 
 router.post("/add", verifyCognitoToken, addToCart);
-router.post("/remove", verifyCognitoToken, removeFromCart);
+router.delete("/remove", verifyCognitoToken, removeFromCart);
+router.patch("/update-quantity", verifyCognitoToken, updateCartQuantity);
 router.get("/", verifyCognitoToken, getCartItems);
 
 module.exports = router;
