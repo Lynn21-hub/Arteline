@@ -3,6 +3,7 @@ import {
   CognitoIdentityProviderClient,
   SignUpCommand,
   InitiateAuthCommand,
+  AdminUserGlobalSignOutCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
 
 import { ConfirmSignUpCommand } from "@aws-sdk/client-cognito-identity-provider";
@@ -82,6 +83,29 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
+export const signout = async (req: Request, res: Response) => {
+  const { username } = req.body;
+
+  if (!username) {
+    return res.status(400).json({ error: "Missing username" });
+  }
+
+  try {
+    const command = new AdminUserGlobalSignOutCommand({
+      UserPoolId: process.env.COGNITO_USER_POOL_ID!,
+      Username: username,
+    });
+
+    await client.send(command);
+
+    return res.json({
+      message: "Signout successful",
+    });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
 export const confirmSignup = async (req: Request, res: Response) => {
   const CLIENT_ID = process.env.COGNITO_CLIENT_ID;
 
@@ -107,3 +131,4 @@ export const confirmSignup = async (req: Request, res: Response) => {
     return res.status(400).json({ error: error.message });
   }
 };
+
