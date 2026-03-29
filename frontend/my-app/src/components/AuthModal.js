@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import AuthForm from './AuthForm';
 import artImage from '../assets/art.jpg';
 
-function AuthModal({ onClose }) {
+function AuthModal({ onClose, onLoginSuccess, userRole }) {
   return (
     <div style={styles.overlay}>
       <div style={styles.modal}>
@@ -20,7 +20,10 @@ function AuthModal({ onClose }) {
 
         {/* RIGHT FORM */}
         <div style={styles.right}>
-          <AuthForm />
+          <AuthForm userRole={userRole} onLoginSuccess={() => {
+            if (onLoginSuccess) onLoginSuccess();
+            onClose();
+          }} />
         </div>
 
       </div>

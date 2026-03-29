@@ -18,11 +18,16 @@ function ConfirmSignup({ email, password, onSuccess }) {
 
       // ✅ Auto login
       await signIn({ username: email, password });
-      window.location.href = "/profile";
 
-      alert("Account confirmed and logged in!");
+      // ✅ Wait a moment for auth state to update
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       onSuccess(); // move to next step (close modal / redirect)
+      
+      // Redirect after state updates
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 100);
 
     } catch (err) {
       setError(err.message);

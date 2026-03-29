@@ -1,7 +1,7 @@
 import React from 'react';
 import { signOut } from 'aws-amplify/auth';
 
-function ProfileDropdown({ goToProfile }) {
+function ProfileDropdown({ goToProfile, onLogout }) {
   return (
     <div style={styles.dropdown}>
       
@@ -13,18 +13,35 @@ function ProfileDropdown({ goToProfile }) {
       <p style={styles.item}>My orders</p>
 
       <p
-        style={{ ...styles.item, color: "red" }}
-        onClick={async () => {
-          await signOut();
-          window.location.reload(); // refresh → user becomes logged out
-        }}
-      >
-        Logout
-      </p>
+  style={{ ...styles.item, color: "red" }}
+  onClick={async () => {
+    try {
+      await signOut({ global: true });
 
-    </div>
+      console.log("User fully signed out");
+
+      // Clear role so role selector shows on next visit
+      localStorage.removeItem('userRole');
+
+      // Call parent callback if provided
+      if (onLogout) {
+        onLogout();
+      }
+
+      // redirect to home
+      window.location.href = "/";
+
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  }}
+>
+  Logout
+</p>
+</div>
   );
 }
+
 
 const styles = {
   dropdown: {
@@ -46,3 +63,4 @@ const styles = {
 };
 
 export default ProfileDropdown;
+ 

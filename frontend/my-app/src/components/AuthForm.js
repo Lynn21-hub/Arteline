@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { signIn, signUp } from 'aws-amplify/auth';
 import ConfirmSignup from './ConfirmSignup';
 
-function AuthForm() {
+function AuthForm({ onLoginSuccess, userRole }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -21,6 +21,7 @@ function AuthForm() {
           options: {
             userAttributes: {
               email: email,
+              'custom:userRole': userRole || 'collector', // Store role as custom attribute
             },
           },
         });
@@ -29,6 +30,9 @@ function AuthForm() {
       } else {
         await signIn({ username: email, password });
         console.log('Signed in!');
+        if (onLoginSuccess) {
+          onLoginSuccess();
+        }
       }
     } catch (err) {
       setError(err.message);
