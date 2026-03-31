@@ -5,6 +5,13 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 const app = express();
+const { stripeWebhook } = require("./controllers/orderController");
+
+app.post(
+  "/payments/stripe/webhook",
+  express.raw({ type: "application/json" }),
+  stripeWebhook
+);
 
 // Debug middleware - logs every incoming request
 app.use((req, res, next) => {
