@@ -44,3 +44,11 @@ export const removeFromCart = async (artworkId) => {
   });
   return response.data;
 };
+
+export const getCheckoutSummary = async () => {
+  const token = await getToken();
+  const response = await axios.get(`${API_URL}/cart/checkout`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+};

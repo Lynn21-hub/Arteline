@@ -1,25 +1,32 @@
 import React, { useEffect, useState } from "react";
-import { getCart, removeFromCart, updateCartQuantity } from "../api/cartAPI";
+import { getCart, removeFromCart, updateCartQuantity,getCheckoutSummary } from "../api/cartAPI";
 
 function Cart() {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
   const [error, setError] = useState("");
+  const [checkout, setCheckout] = useState(null);
 
   const loadCart = async () => {
-    try {
-      setLoading(true);
-      setError("");
-      const data = await getCart();
-      setCartItems(data.items || []);
-    } catch (err) {
-      console.error("Error loading cart:", err);
-      setError("Failed to load cart.");
-    } finally {
-      setLoading(false);
-    }
-  };
+      try {
+        setLoading(true);
+        setError("");
+    
+        const [cartData, checkoutData] = await Promise.all([
+          getCart(),
+          getCheckoutSummary(),
+        ]);
+    
+        setCartItems(cartData.items || []);
+        setCheckout(checkoutData);
+      } catch (err) {
+        console.error("Error loading cart:", err);
+        setError(err.response?.data?.message || "Failed to load cart.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
   useEffect(() => {
     loadCart();
@@ -50,6 +57,7 @@ function Cart() {
       setUpdatingId(null);
     }
   };
+  
 
   const handleRemove = async (artworkId) => {
     try {

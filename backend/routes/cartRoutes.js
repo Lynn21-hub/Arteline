@@ -5,7 +5,8 @@ const {
   addToCart,
   removeFromCart,
   getCartItems,
-  updateCartQuantity
+  updateCartQuantity,
+ getCheckoutSummary
 } = require("../controllers/cartController");
 
 const verifyCognitoToken = require("../middleware/authmiddleware");
@@ -13,6 +14,7 @@ const verifyCognitoToken = require("../middleware/authmiddleware");
 router.post("/add", verifyCognitoToken, addToCart);
 router.delete("/remove", verifyCognitoToken, removeFromCart);
 router.patch("/update-quantity", verifyCognitoToken, updateCartQuantity);
+router.get("/checkout", verifyCognitoToken, getCheckoutSummary);
 router.get("/", verifyCognitoToken, getCartItems);
 
 module.exports = router;

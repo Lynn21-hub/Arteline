@@ -9,7 +9,8 @@ import AuthModal from './components/AuthModal';
 import ProfileDropdown from './components/ProfileDropdown';
 import Artworks from './pages/Artworks';
 import Cart from './pages/Cart';
- 
+import Checkout from './pages/Checkout';
+
 Amplify.configure({
   Auth: {
     Cognito: {
@@ -66,6 +67,7 @@ function App() {
     if (page === "profile")  return <Profile />;
     if (page === "artworks") return <Artworks />;
     if(page=="cart") return <Cart />;
+    if(page=="checkout") return <Checkout />;
     return <Home />;
   };
  

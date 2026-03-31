@@ -7,26 +7,35 @@ const addToCart = async (req, res) => {
     const userId = req.user.sub;
     const { artworkId, quantity } = req.body;
 
-    if (!artworkId) {
+    if (!artworkId || quantity === undefined || quantity === null) {
       return res.status(400).json({
-        message: "artworkId is required",
+        message: "artworkId and quantity are required",
       });
     }
 
-    const qty = quantity ? Number(quantity) : 1;
     const artId = Number(artworkId);
+    const qty = Number(quantity);
 
     if (Number.isNaN(artId) || Number.isNaN(qty) || qty < 1) {
       return res.status(400).json({
         message: "artworkId must be a number and quantity must be at least 1",
       });
     }
-    if (!artworkId || quantity === undefined || quantity === null) {
-      return res.status(400).json({ message: "artworkId and quantity are required" });
+
+    const artwork = await prisma.artwork.findUnique({
+      where: { id: artId },
+    });
+
+    if (!artwork) {
+      return res.status(404).json({
+        message: "Artwork not found",
+      });
     }
-    
-    if (quantity <= 0) {
-      return res.status(400).json({ message: "Quantity must be at least 1" });
+
+    if (artwork.inventory <= 0) {
+      return res.status(400).json({
+        message: "This artwork is out of stock",
+      });
     }
 
     const existingItem = await prisma.cartItem.findFirst({
@@ -37,18 +46,32 @@ const addToCart = async (req, res) => {
     });
 
     if (existingItem) {
+      const newQuantity = existingItem.quantity + qty;
+
+      if (newQuantity > artwork.inventory) {
+        return res.status(400).json({
+          message: `Only ${artwork.inventory} item(s) available in stock`,
+        });
+      }
+
       const updatedItem = await prisma.cartItem.update({
         where: {
           id: existingItem.id,
         },
         data: {
-          quantity: existingItem.quantity + qty,
+          quantity: newQuantity,
         },
       });
 
       return res.status(200).json({
         message: "Cart updated successfully",
         item: updatedItem,
+      });
+    }
+
+    if (qty > artwork.inventory) {
+      return res.status(400).json({
+        message: `Only ${artwork.inventory} item(s) available in stock`,
       });
     }
 
@@ -212,9 +235,74 @@ const updateCartQuantity = async (req, res) => {
   }
 };
 
+
+const getCheckoutSummary = async (req, res) => {
+  try {
+    const userId = req.user.sub;
+
+    const cartItems = await prisma.cartItem.findMany({
+      where: { user_id: userId },
+      include: {
+        artwork: true,
+      },
+    });
+
+    if (!cartItems.length) {
+      return res.status(200).json({
+        items: [],
+        subtotal: 0,
+        shipping: 0,
+        tax: 0,
+        total: 0,
+        message: "Cart is empty",
+      });
+    }
+
+    const items = cartItems.map((item) => {
+      const price = Number(item.artwork.price);
+      const quantity = item.quantity;
+      const lineTotal = price * quantity;
+
+      return {
+        cartItemId: item.id,
+        artworkId: item.artwork.id,
+        title: item.artwork.title,
+        image_url: item.artwork.image_url,
+        artist_name: item.artwork.artist_name,
+        price,
+        quantity,
+        lineTotal,
+      };
+    });
+
+    const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
+
+    const shipping = 0; // change later if needed
+    const tax = 0; // change later if needed
+    const total = subtotal + shipping + tax;
+
+    return res.status(200).json({
+      items,
+      subtotal,
+      shipping,
+      tax,
+      total,
+    });
+  } catch (error) {
+    console.error("Checkout summary error:", error);
+    return res.status(500).json({
+      message: "Failed to generate checkout summary",
+      error: error.message,
+    });
+  }
+};
+
+
 module.exports = {
   addToCart,
   removeFromCart,
   updateCartQuantity,
   getCartItems,
+  getCheckoutSummary,
 };
+
