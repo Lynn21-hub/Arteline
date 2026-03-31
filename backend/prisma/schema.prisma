@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model CartItem {
+  id         Int      @id @default(autoincrement())
+  user_id    String
+  artwork_id Int
+  quantity   Int      @default(1)
+  created_at DateTime @default(now())
+
+  artwork    Artwork  @relation(fields: [artwork_id], references: [id])
+
+  @@map("cart_items")
+}
+
+model Artwork {
+  id          Int        @id @default(autoincrement())
+  title       String     @db.VarChar(255)
+  description String?    @db.Text
+  category    String?    @db.VarChar(100)
+  format      String?    @db.VarChar(50)
+  price       Decimal    @db.Decimal(10, 2)
+  inventory   Int?       @default(1)
+  artist_name String?    @db.VarChar(255)
+  image_url   String?    @db.Text
+  s3_key      String?    @db.VarChar(255)
+  created_at  DateTime?  @default(now()) @db.Timestamp(0)
+  updated_at  DateTime?  @default(now()) @updatedAt @db.Timestamp(0)
+
+  cartItems   CartItem[]
+  orderItems OrderItem[]
+
+  @@map("artworks")
+}
+model Order {
+  id                        Int         @id @default(autoincrement())
+  user_id                   String
+  subtotal                  Decimal     @db.Decimal(10, 2)
+  shipping                  Decimal     @default(0.00) @db.Decimal(10, 2)
+  tax                       Decimal     @default(0.00) @db.Decimal(10, 2)
+  total                     Decimal     @db.Decimal(10, 2)
+  status                    String      @default("PENDING") @db.VarChar(50)
+  payment_method            String      @db.VarChar(20)
+  payment_status            String      @default("PENDING") @db.VarChar(20)
+  stripe_checkout_session_id String?    @db.VarChar(255)
+  stripe_payment_intent_id   String?    @db.VarChar(255)
+  created_at                DateTime?   @default(now()) @db.Timestamp(0)
+  updated_at                DateTime?   @default(now()) @updatedAt @db.Timestamp(0)
+
+  orderItems OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id                Int       @id @default(autoincrement())
+  order_id          Int
+  artwork_id        Int
+  quantity          Int       @default(1)
+  price_at_purchase Decimal   @db.Decimal(10, 2)
+  line_total        Decimal   @db.Decimal(10, 2)
+  created_at        DateTime? @default(now()) @db.Timestamp(0)
+
+  order             Order     @relation(fields: [order_id], references: [id])
+  artwork           Artwork   @relation(fields: [artwork_id], references: [id])
+
+  @@map("order_items")
+}

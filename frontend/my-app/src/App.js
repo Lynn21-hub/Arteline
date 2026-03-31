@@ -1,32 +1,50 @@
-import './App.css';
-import React, { useState, useEffect } from 'react';
-import { Amplify } from 'aws-amplify';
-import { getCurrentUser } from 'aws-amplify/auth';
+import "./App.css";
+import React, { useState, useEffect } from "react";
+import { Amplify } from "aws-amplify";
+import { getCurrentUser } from "aws-amplify/auth";
+import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 
-import Profile from './pages/Profile';
-import Home from './pages/Home';
-import AuthModal from './components/AuthModal';
-import ProfileDropdown from './components/ProfileDropdown';
-import RoleSelector from './components/RoleSelector';
+import RoleSelector from "./components/RoleSelector";
+import Profile from "./pages/Profile";
+import Home from "./pages/Home";
+import AuthModal from "./components/AuthModal";
+import ProfileDropdown from "./components/ProfileDropdown";
+import Artworks from "./pages/Artworks";
+import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
+import Orders from "./pages/Orders";
 
 Amplify.configure({
   Auth: {
     Cognito: {
       userPoolId: "eu-west-1_75sr500CR",
       userPoolClientId: "70p1ungik7dq8vcjtdnaqbc002",
-    }
-  }
+    },
+  },
 });
+
+const baseNavBtn = {
+  background: "none",
+  border: "none",
+  fontSize: "15px",
+  cursor: "pointer",
+  fontWeight: "500",
+  color: "#111",
+  padding: "6px 4px",
+};
 
 function App() {
   const [showModal, setShowModal] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [page, setPage] = useState("home");
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [userRole, setUserRole] = useState(() => {
-    // Load role from localStorage if it exists
-    return localStorage.getItem('userRole') || null;
+    return localStorage.getItem("userRole") || null;
   });
+
   const [showRoleSelector, setShowRoleSelector] = useState(!userRole);
 
   const checkUser = async () => {
@@ -48,60 +66,107 @@ function App() {
   };
 
   const handleSelectRole = (role) => {
-    localStorage.setItem('userRole', role);
+    localStorage.setItem("userRole", role);
     setUserRole(role);
     setShowRoleSelector(false);
-    setShowModal(true); // Automatically open auth modal after role selection
+    setShowModal(true);
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
-    setShowRoleSelector(true);
     setShowDropdown(false);
+    setShowRoleSelector(true);
+    localStorage.removeItem("userRole");
+    navigate("/");
   };
 
   const handleProfileClick = () => {
     if (isAuthenticated) {
-      setShowDropdown(!showDropdown);
+      setShowDropdown((prev) => !prev);
     } else {
-      // Show role selector if not authenticated
       setShowRoleSelector(true);
     }
   };
 
+  const getNavStyle = (path) => {
+    const isActive = location.pathname === path;
+    return {
+      ...baseNavBtn,
+      color: isActive ? "#ff6b35" : "#111",
+      borderBottom: isActive ? "2px solid #ff6b35" : "none",
+    };
+  };
+
   return (
     <div>
-
-      {/* ROLE SELECTOR - Show first if role not selected */}
+      {/* ROLE SELECTOR */}
       {showRoleSelector && <RoleSelector onSelectRole={handleSelectRole} />}
 
       {/* NAVBAR */}
       {!showRoleSelector && (
-        <div style={{ padding: "20px", display: "flex", justifyContent: "flex-end", position: "relative" }}>
-          
-          <button onClick={handleProfileClick}>👤</button>
+        <div
+          style={{
+            padding: "16px 28px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            position: "relative",
+            borderBottom: "1px solid #eee",
+          }}
+        >
+          <div style={{ display: "flex", gap: "24px", alignItems: "center" }}>
+            <button onClick={() => navigate("/")} style={getNavStyle("/")}>
+              Home
+            </button>
 
-          {showDropdown && (
-    <ProfileDropdown
-      goToProfile={() => {
-        setPage("profile");     
-        setShowDropdown(false); // close dropdown
-      }}
-      onLogout={handleLogout}
-    />
-  )}
+            <button
+              onClick={() => navigate("/artworks")}
+              style={getNavStyle("/artworks")}
+            >
+              Artworks
+            </button>
+          </div>
 
+          <div style={{ position: "relative" }}>
+            <button onClick={handleProfileClick}>👤</button>
+
+            {showDropdown && (
+              <ProfileDropdown
+                goToProfile={() => {
+                  navigate("/profile");
+                  setShowDropdown(false);
+                }}
+                goToCart={() => {
+                  navigate("/cart");
+                  setShowDropdown(false);
+                }}
+                onLogout={handleLogout}
+              />
+            )}
+          </div>
         </div>
       )}
 
-      {/* MODAL */}
+      {/* AUTH MODAL */}
       {!showRoleSelector && showModal && (
-        <AuthModal onClose={() => setShowModal(false)} onLoginSuccess={handleLoginSuccess} userRole={userRole} />
+        <AuthModal
+          onClose={() => setShowModal(false)}
+          onLoginSuccess={handleLoginSuccess}
+          userRole={userRole}
+        />
       )}
 
-      {/* PAGE SWITCH */}
-      {!showRoleSelector && (page === "profile" ? <Profile /> : <Home />)}
-
+      {/* ROUTES */}
+      {!showRoleSelector && (
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/artworks" element={<Artworks />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/orders" element={<Orders />} />
+          <Route path="/profile" element={<Profile />} />
+        </Routes>
+      )}
     </div>
   );
 }
