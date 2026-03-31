@@ -26,7 +26,9 @@ app.get("/", (req, res) => {
 });
 
 const cartRoutes = require("./routes/cartRoutes");
+const orderRoutes = require("./routes/orderRoutes");
 app.use("/cart", cartRoutes);
+app.use("/order", orderRoutes);
 
 const PORT = process.env.PORT || 5000;
 

@@ -304,5 +304,6 @@ module.exports = {
   updateCartQuantity,
   getCartItems,
   getCheckoutSummary,
+  
 };
 
