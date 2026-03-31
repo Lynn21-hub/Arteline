@@ -1,26 +1,28 @@
-import './App.css';
-import React, { useState, useEffect } from 'react';
-import { Amplify } from 'aws-amplify';
-import { getCurrentUser } from 'aws-amplify/auth';
- 
-import Profile from './pages/Profile';
-import Home from './pages/Home';
-import AuthModal from './components/AuthModal';
-import ProfileDropdown from './components/ProfileDropdown';
-import Artworks from './pages/Artworks';
-import Cart from './pages/Cart';
-import Checkout from './pages/Checkout';
+import "./App.css";
+import React, { useState, useEffect } from "react";
+import { Amplify } from "aws-amplify";
+import { getCurrentUser } from "aws-amplify/auth";
+import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
+
+import Profile from "./pages/Profile";
+import Home from "./pages/Home";
+import AuthModal from "./components/AuthModal";
+import ProfileDropdown from "./components/ProfileDropdown";
+import Artworks from "./pages/Artworks";
+import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
+import Orders from "./pages/Orders";
 
 Amplify.configure({
   Auth: {
     Cognito: {
       userPoolId: "eu-west-1_75sr500CR",
       userPoolClientId: "70p1ungik7dq8vcjtdnaqbc002",
-    }
-  }
+    },
+  },
 });
- 
-const navBtn = {
+
+const baseNavBtn = {
   background: "none",
   border: "none",
   fontSize: "15px",
@@ -29,19 +31,15 @@ const navBtn = {
   color: "#111",
   padding: "6px 4px",
 };
- 
-const navBtnActive = {
-  ...navBtn,
-  color: "#ff6b35",
-  borderBottom: "2px solid #ff6b35",
-};
- 
+
 function App() {
   const [showModal, setShowModal] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [page, setPage] = useState("home");
- 
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
   useEffect(() => {
     const checkUser = async () => {
       try {
@@ -51,10 +49,10 @@ function App() {
         setIsAuthenticated(false);
       }
     };
- 
+
     checkUser();
   }, []);
- 
+
   const handleProfileClick = () => {
     if (isAuthenticated) {
       setShowDropdown(!showDropdown);
@@ -62,77 +60,81 @@ function App() {
       setShowModal(true);
     }
   };
- 
-  const renderPage = () => {
-    if (page === "profile")  return <Profile />;
-    if (page === "artworks") return <Artworks />;
-    if(page=="cart") return <Cart />;
-    if(page=="checkout") return <Checkout />;
-    return <Home />;
+
+  const getNavStyle = (path) => {
+    const isActive = location.pathname === path;
+    return {
+      ...baseNavBtn,
+      color: isActive ? "#ff6b35" : "#111",
+      borderBottom: isActive ? "2px solid #ff6b35" : "none",
+    };
   };
- 
+
   return (
     <div>
- 
-      {/* NAVBAR */}
-      <div style={{
-        padding: "16px 28px",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        position: "relative",
-        borderBottom: "1px solid #eee",
-      }}>
- 
-        {/* LEFT - Nav links */}
+      <div
+        style={{
+          padding: "16px 28px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          position: "relative",
+          borderBottom: "1px solid #eee",
+        }}
+      >
         <div style={{ display: "flex", gap: "24px", alignItems: "center" }}>
-          <button
-            onClick={() => setPage("home")}
-            style={page === "home" ? navBtnActive : navBtn}
-          >
+          <button onClick={() => navigate("/")} style={getNavStyle("/")}>
             Home
           </button>
+
           <button
-            onClick={() => setPage("artworks")}
-            style={page === "artworks" ? navBtnActive : navBtn}
+            onClick={() => navigate("/artworks")}
+            style={getNavStyle("/artworks")}
           >
             Artworks
           </button>
         </div>
- 
-        {/* RIGHT - Profile */}
+
         <div style={{ position: "relative" }}>
-          <button onClick={handleProfileClick} style={{ background: "none", border: "none", fontSize: "22px", cursor: "pointer" }}>
+          <button
+            onClick={handleProfileClick}
+            style={{
+              background: "none",
+              border: "none",
+              fontSize: "22px",
+              cursor: "pointer",
+            }}
+          >
             👤
           </button>
- 
+
           {showDropdown && (
             <ProfileDropdown
               goToProfile={() => {
-                setPage("profile");
+                navigate("/profile");
                 setShowDropdown(false);
               }}
               goToCart={() => {
-                setPage("cart");
+                navigate("/cart");
                 setShowDropdown(false);
               }}
             />
           )}
         </div>
- 
       </div>
- 
-      {/* MODAL */}
-      {showModal && (
-        <AuthModal onClose={() => setShowModal(false)} />
-      )}
- 
-      {/* PAGE */}
-      {renderPage()}
- 
+
+      {showModal && <AuthModal onClose={() => setShowModal(false)} />}
+
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/artworks" element={<Artworks />} />
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/orders" element={<Orders />} />
+        <Route path="/profile" element={<Profile />} />
+      </Routes>
     </div>
   );
 }
- 
+
 export default App;
- 

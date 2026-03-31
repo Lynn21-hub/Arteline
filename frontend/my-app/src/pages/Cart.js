@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { getCart, removeFromCart, updateCartQuantity,getCheckoutSummary } from "../api/cartAPI";
+import { useNavigate } from "react-router-dom";
 
 function Cart() {
   const [cartItems, setCartItems] = useState([]);
@@ -7,7 +8,8 @@ function Cart() {
   const [updatingId, setUpdatingId] = useState(null);
   const [error, setError] = useState("");
   const [checkout, setCheckout] = useState(null);
-
+  const navigate = useNavigate();
+  
   const loadCart = async () => {
       try {
         setLoading(true);
@@ -152,7 +154,12 @@ function Cart() {
 
           <div style={styles.summaryBox}>
             <h2 style={styles.total}>Total: ${totalPrice.toFixed(2)}</h2>
-            <button style={styles.checkoutBtn}>Proceed to Checkout</button>
+            <button
+  style={styles.checkoutBtn}
+  onClick={() => navigate("/checkout")}
+>
+  Proceed to Checkout
+</button>
           </div>
         </>
       )}
