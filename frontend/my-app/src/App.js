@@ -14,6 +14,9 @@ import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Orders from "./pages/Orders";
 import ArtworkDetails from "./pages/ArtworkDetails";
+import ArtistInventory from "./pages/ArtistInventory";
+import CreateArtwork from "./pages/CreateArtwork";
+import EditArtwork from "./pages/EditArtwork";
 
 Amplify.configure({
   Auth: {
@@ -126,6 +129,21 @@ function App() {
             >
               Artworks
             </button>
+
+            <button
+              onClick={() => navigate("/artist/inventory")}
+              style={getNavStyle("/artist/inventory")}
+            >
+              My Inventory
+            </button>
+
+            <button
+              onClick={() => navigate("/artist/artworks/new")}
+              style={getNavStyle("/artist/artworks/new")}
+            >
+              Add Artwork
+            </button>
+            
           </div>
 
           <div style={{ position: "relative" }}>
@@ -167,6 +185,9 @@ function App() {
           <Route path="/orders" element={<Orders />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/artworks/:id" element={<ArtworkDetails />} />
+          <Route path="/artist/inventory" element={<ArtistInventory />} />
+          <Route path="/artist/artworks/new" element={<CreateArtwork />} />
+          <Route path="/artist/artworks/edit/:id" element={<EditArtwork />} />
         </Routes>
       )}
     </div>
