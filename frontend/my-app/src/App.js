@@ -13,6 +13,7 @@ import Artworks from "./pages/Artworks";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Orders from "./pages/Orders";
+import ArtworkDetails from "./pages/ArtworkDetails";
 
 Amplify.configure({
   Auth: {
@@ -165,6 +166,7 @@ function App() {
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/orders" element={<Orders />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/artworks/:id" element={<ArtworkDetails />} />
         </Routes>
       )}
     </div>
