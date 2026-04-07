@@ -36,3 +36,27 @@
     transform: rotate(360deg);
   }
 }
+
+.nav-btn,
+.profile-btn {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  outline: none;
+  box-shadow: none;
+  background-clip: padding-box;
+}
+
+.nav-btn::-moz-focus-inner,
+.profile-btn::-moz-focus-inner {
+  border: 0;
+  padding: 0;
+}
+
+.nav-btn:focus,
+.nav-btn:focus-visible,
+.profile-btn:focus,
+.profile-btn:focus-visible {
+  outline: none;
+  box-shadow: none;
+}

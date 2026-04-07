@@ -1,17 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getAllArtworks, deleteArtwork } from "../api/artworkAPI";
+import { getMyArtworks, deleteArtwork } from "../api/artworkAPI";
 
 function ArtistInventory() {
   const [artworks, setArtworks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const fetchArtworks = async () => {
     try {
-      const data = await getAllArtworks();
-      setArtworks(data);
+      setError("");
+      const data = await getMyArtworks();
+      setArtworks(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error loading artworks:", error);
+      setError(error.message || "Failed to load your inventory");
+      setArtworks([]);
     } finally {
       setLoading(false);
     }
@@ -51,6 +55,8 @@ function ArtistInventory() {
 
         {loading ? (
           <div className="empty-box">Loading artworks...</div>
+        ) : error ? (
+          <div className="empty-box">{error}</div>
         ) : artworks.length === 0 ? (
           <div className="empty-box">No artworks in inventory yet.</div>
         ) : (

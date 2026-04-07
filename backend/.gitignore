@@ -1,9 +1,5 @@
-<<<<<<< HEAD
-.env
+
 node_modules
 dist
-=======
-node_modules
 .env
 /generated/prisma
->>>>>>> feature/cart

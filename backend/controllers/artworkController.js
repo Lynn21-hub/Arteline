@@ -16,9 +16,33 @@ exports.getAllArtworks = async (req, res) => {
   }
 };
 
+exports.getMyArtworks = async (req, res) => {
+  try {
+    const userSub = req.user?.sub;
+
+    if (!userSub) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const artworks = await prisma.artwork.findMany({
+      where: {
+        creator_sub: userSub,
+      },
+      orderBy: {
+        created_at: "desc",
+      },
+    });
+
+    res.status(200).json(artworks);
+  } catch (error) {
+    console.error("Error fetching user artworks:", error);
+    res.status(500).json({ message: "Error fetching user artworks" });
+  }
+};
+
 exports.getArtworkById = async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id, 10);
 
     const artwork = await prisma.artwork.findUnique({
       where: { id },
@@ -37,6 +61,11 @@ exports.getArtworkById = async (req, res) => {
 
 exports.createArtwork = async (req, res) => {
   try {
+    const userSub = req.user?.sub;
+    if (!userSub) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
     const {
       title,
       description,
@@ -64,6 +93,7 @@ exports.createArtwork = async (req, res) => {
         artist_name,
         image_url,
         s3_key,
+        creator_sub: userSub,
       },
     });
 
@@ -76,6 +106,11 @@ exports.createArtwork = async (req, res) => {
 
 exports.updateArtwork = async (req, res) => {
   try {
+    const userSub = req.user?.sub;
+    if (!userSub) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
     const id = Number(req.params.id);
 
     const {
@@ -96,6 +131,10 @@ exports.updateArtwork = async (req, res) => {
 
     if (!existingArtwork) {
       return res.status(404).json({ message: "Artwork not found" });
+    }
+
+    if (existingArtwork.creator_sub && existingArtwork.creator_sub !== userSub) {
+      return res.status(403).json({ message: "You can only edit your own artworks" });
     }
 
     const updatedArtwork = await prisma.artwork.update({
@@ -122,6 +161,11 @@ exports.updateArtwork = async (req, res) => {
 
 exports.deleteArtwork = async (req, res) => {
   try {
+    const userSub = req.user?.sub;
+    if (!userSub) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
     const id = Number(req.params.id);
 
     const existingArtwork = await prisma.artwork.findUnique({
@@ -130,6 +174,10 @@ exports.deleteArtwork = async (req, res) => {
 
     if (!existingArtwork) {
       return res.status(404).json({ message: "Artwork not found" });
+    }
+
+    if (existingArtwork.creator_sub && existingArtwork.creator_sub !== userSub) {
+      return res.status(403).json({ message: "You can only delete your own artworks" });
     }
 
     await prisma.artwork.delete({

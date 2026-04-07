@@ -1,7 +1,7 @@
 import React from "react";
 import { signOut } from "aws-amplify/auth";
 
-function ProfileDropdown({ goToProfile, goToCart, onLogout }) {
+function ProfileDropdown({ onLogout }) {
   const handleLogout = async () => {
     try {
       await signOut({ global: true });
@@ -21,22 +21,6 @@ function ProfileDropdown({ goToProfile, goToCart, onLogout }) {
 
   return (
     <div style={styles.dropdown}>
-      <button style={styles.item} onClick={goToProfile}>
-        My information
-      </button>
-
-      <button style={styles.item}>
-        Payment settings
-      </button>
-
-      <button style={styles.item} onClick={goToCart}>
-        My cart
-      </button>
-
-      <button style={styles.item}>
-        My orders
-      </button>
-
       <button style={{ ...styles.item, color: "red" }} onClick={handleLogout}>
         Logout
       </button>

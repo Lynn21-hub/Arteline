@@ -2,7 +2,7 @@ import "./App.css";
 import React, { useState, useEffect } from "react";
 import { Amplify } from "aws-amplify";
 import { getCurrentUser } from "aws-amplify/auth";
-import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
+import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 
 import RoleSelector from "./components/RoleSelector";
 import Profile from "./pages/Profile";
@@ -28,13 +28,35 @@ Amplify.configure({
 });
 
 const baseNavBtn = {
-  background: "none",
-  border: "none",
+  all: "unset",
+  background: "transparent",
   fontSize: "15px",
   cursor: "pointer",
   fontWeight: "500",
   color: "#111",
   padding: "6px 4px",
+  outline: "none",
+  boxShadow: "none",
+  lineHeight: "1.2",
+  display: "inline-flex",
+  alignItems: "center",
+  borderBottom: "2px solid transparent",
+};
+
+const profileBtnBase = {
+  all: "unset",
+  width: "36px",
+  height: "36px",
+  borderRadius: "10px",
+  border: "1px solid #d8c8b8",
+  background: "#fffaf3",
+  color: "#7a4e2f",
+  cursor: "pointer",
+  fontSize: "18px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  boxSizing: "border-box",
 };
 
 function App() {
@@ -97,12 +119,68 @@ function App() {
     return {
       ...baseNavBtn,
       color: isActive ? "#ff6b35" : "#111",
-      borderBottom: isActive ? "2px solid #ff6b35" : "none",
+      borderBottom: isActive ? "2px solid #ff6b35" : "2px solid transparent",
     };
   };
 
+  const renderNavItems = () => {
+    if (userRole === "collector") {
+      return (
+        <>
+          <button className="nav-btn" onClick={() => navigate("/")} style={getNavStyle("/")}>
+            Home
+          </button>
+
+          <button className="nav-btn" onClick={() => navigate("/artworks")} style={getNavStyle("/artworks")}>
+            Artworks
+          </button>
+
+          <button className="nav-btn" onClick={() => navigate("/cart")} style={getNavStyle("/cart")}>
+            Cart
+          </button>
+
+          <button className="nav-btn" onClick={() => navigate("/orders")} style={getNavStyle("/orders")}>
+            Orders
+          </button>
+
+          <button className="nav-btn" onClick={() => navigate("/profile")} style={getNavStyle("/profile")}>
+            My information
+          </button>
+        </>
+      );
+    }
+
+    return (
+      <>
+        <button className="nav-btn" onClick={() => navigate("/")} style={getNavStyle("/")}>
+          Home
+        </button>
+
+        <button className="nav-btn" onClick={() => navigate("/artworks")} style={getNavStyle("/artworks")}>
+          Artworks
+        </button>
+
+        <button
+          className="nav-btn"
+          onClick={() => navigate("/artist/inventory")}
+          style={getNavStyle("/artist/inventory")}
+        >
+          My Inventory
+        </button>
+
+        <button
+          className="nav-btn"
+          onClick={() => navigate("/artist/artworks/new")}
+          style={getNavStyle("/artist/artworks/new")}
+        >
+          Add Artwork
+        </button>
+      </>
+    );
+  };
+
   return (
-    <div>
+    <div style={{ minHeight: "100vh", background: "#f7f4ef" }}>
       {/* ROLE SELECTOR */}
       {showRoleSelector && <RoleSelector onSelectRole={handleSelectRole} />}
 
@@ -115,50 +193,31 @@ function App() {
             justifyContent: "space-between",
             alignItems: "center",
             position: "relative",
-            borderBottom: "1px solid #eee",
+            background: "#f7f4ef",
+            borderBottom: "none",
           }}
         >
           <div style={{ display: "flex", gap: "24px", alignItems: "center" }}>
-            <button onClick={() => navigate("/")} style={getNavStyle("/")}>
-              Home
-            </button>
-
-            <button
-              onClick={() => navigate("/artworks")}
-              style={getNavStyle("/artworks")}
-            >
-              Artworks
-            </button>
-
-            <button
-              onClick={() => navigate("/artist/inventory")}
-              style={getNavStyle("/artist/inventory")}
-            >
-              My Inventory
-            </button>
-
-            <button
-              onClick={() => navigate("/artist/artworks/new")}
-              style={getNavStyle("/artist/artworks/new")}
-            >
-              Add Artwork
-            </button>
-            
+            {renderNavItems()}
           </div>
 
           <div style={{ position: "relative" }}>
-            <button onClick={handleProfileClick}>👤</button>
+            <button
+              className="profile-btn"
+              onClick={handleProfileClick}
+              style={{
+                ...profileBtnBase,
+                background: showDropdown ? "#f3e7dc" : "#fffaf3",
+                borderColor: showDropdown ? "#c9a88c" : "#d8c8b8",
+              }}
+              aria-label="Account menu"
+              title="Account"
+            >
+              👤
+            </button>
 
             {showDropdown && (
               <ProfileDropdown
-                goToProfile={() => {
-                  navigate("/profile");
-                  setShowDropdown(false);
-                }}
-                goToCart={() => {
-                  navigate("/cart");
-                  setShowDropdown(false);
-                }}
                 onLogout={handleLogout}
               />
             )}
@@ -185,9 +244,18 @@ function App() {
           <Route path="/orders" element={<Orders />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/artworks/:id" element={<ArtworkDetails />} />
-          <Route path="/artist/inventory" element={<ArtistInventory />} />
-          <Route path="/artist/artworks/new" element={<CreateArtwork />} />
-          <Route path="/artist/artworks/edit/:id" element={<EditArtwork />} />
+          <Route
+            path="/artist/inventory"
+            element={userRole === "artist" ? <ArtistInventory /> : <Navigate to="/" replace />}
+          />
+          <Route
+            path="/artist/artworks/new"
+            element={userRole === "artist" ? <CreateArtwork /> : <Navigate to="/" replace />}
+          />
+          <Route
+            path="/artist/artworks/edit/:id"
+            element={userRole === "artist" ? <EditArtwork /> : <Navigate to="/" replace />}
+          />
         </Routes>
       )}
     </div>

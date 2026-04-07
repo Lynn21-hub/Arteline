@@ -34,21 +34,13 @@ app.get("/", (req, res) => {
 
 const cartRoutes = require("./routes/cartRoutes");
 const orderRoutes = require("./routes/orderRoutes");
-app.use("/cart", cartRoutes);
-app.use("/order", orderRoutes);
-
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-
 const artworkRoutes = require("./routes/artworkRoutes");
 
-app.use(cors());
-app.use(express.json());
-
+app.use("/cart", cartRoutes);
+app.use("/order", orderRoutes);
 app.use("/api/artworks", artworkRoutes);
+
+const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

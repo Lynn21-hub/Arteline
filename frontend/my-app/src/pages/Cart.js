@@ -1,5 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { getCart, removeFromCart, updateCartQuantity,getCheckoutSummary } from "../api/cartAPI";
+import {
+  getCart,
+  removeFromCart,
+  updateCartQuantity,
+  getCheckoutSummary,
+} from "../api/cartAPI";
 import { useNavigate } from "react-router-dom";
 
 function Cart() {
@@ -7,28 +12,28 @@ function Cart() {
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
   const [error, setError] = useState("");
-  const [checkout, setCheckout] = useState(null);
+  const [, setCheckout] = useState(null);
   const navigate = useNavigate();
-  
+
   const loadCart = async () => {
-      try {
-        setLoading(true);
-        setError("");
-    
-        const [cartData, checkoutData] = await Promise.all([
-          getCart(),
-          getCheckoutSummary(),
-        ]);
-    
-        setCartItems(cartData.items || []);
-        setCheckout(checkoutData);
-      } catch (err) {
-        console.error("Error loading cart:", err);
-        setError(err.response?.data?.message || "Failed to load cart.");
-      } finally {
-        setLoading(false);
-      }
-    };
+    try {
+      setLoading(true);
+      setError("");
+
+      const [cartData, checkoutData] = await Promise.all([
+        getCart(),
+        getCheckoutSummary(),
+      ]);
+
+      setCartItems(cartData.items || []);
+      setCheckout(checkoutData);
+    } catch (err) {
+      console.error("Error loading cart:", err);
+      setError(err.response?.data?.message || "Failed to load cart.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     loadCart();
@@ -59,7 +64,6 @@ function Cart() {
       setUpdatingId(null);
     }
   };
-  
 
   const handleRemove = async (artworkId) => {
     try {
@@ -86,6 +90,7 @@ function Cart() {
 
   return (
     <div style={styles.container}>
+      <p style={styles.kicker}>COLLECTOR DASHBOARD</p>
       <h1 style={styles.title}>My Cart</h1>
 
       {error && <p style={styles.error}>{error}</p>}
@@ -111,10 +116,9 @@ function Cart() {
                   />
 
                   <div style={styles.info}>
+                    <p style={styles.category}>{artwork?.category || "Artwork"}</p>
                     <h3 style={styles.itemTitle}>{artwork?.title || "Untitled Artwork"}</h3>
-                    <p style={styles.artist}>
-                      by {artwork?.artist_name || "Unknown Artist"}
-                    </p>
+                    <p style={styles.artist}>by {artwork?.artist_name || "Unknown Artist"}</p>
                     <p style={styles.price}>${artwork?.price || 0}</p>
 
                     <div style={styles.controlsRow}>
@@ -154,12 +158,9 @@ function Cart() {
 
           <div style={styles.summaryBox}>
             <h2 style={styles.total}>Total: ${totalPrice.toFixed(2)}</h2>
-            <button
-  style={styles.checkoutBtn}
-  onClick={() => navigate("/checkout")}
->
-  Proceed to Checkout
-</button>
+            <button style={styles.checkoutBtn} onClick={() => navigate("/checkout")}>
+              Proceed to Checkout
+            </button>
           </div>
         </>
       )}
@@ -170,32 +171,45 @@ function Cart() {
 const styles = {
   container: {
     minHeight: "100vh",
-    background: "#f8f6f2",
-    padding: "50px 8%",
-    fontFamily: "'Poppins', Arial, sans-serif",
+    background: "#f7f4ef",
+    padding: "40px 8%",
+    fontFamily: "Arial, sans-serif",
+    color: "#111",
+  },
+  kicker: {
+    margin: "0 0 8px",
+    color: "#b06b3f",
+    fontSize: "12px",
+    letterSpacing: "2px",
+    fontWeight: "700",
   },
   title: {
-    textAlign: "center",
-    fontSize: "42px",
-    marginBottom: "30px",
-    color: "#1f1f1f",
+    margin: "0 0 30px",
+    fontSize: "48px",
+    color: "#111",
+    fontFamily: "Georgia, serif",
   },
   message: {
     textAlign: "center",
     padding: "60px",
     fontSize: "18px",
+    background: "#f7f4ef",
+    minHeight: "100vh",
   },
   error: {
-    textAlign: "center",
-    color: "red",
+    textAlign: "left",
+    color: "#9f2d20",
     marginBottom: "20px",
+    background: "#f3e7e3",
+    borderRadius: "12px",
+    padding: "12px 14px",
   },
   emptyBox: {
     background: "white",
     borderRadius: "20px",
-    padding: "50px",
+    padding: "40px",
     textAlign: "center",
-    boxShadow: "0 10px 25px rgba(0,0,0,0.06)",
+    boxShadow: "0 10px 24px rgba(0,0,0,0.06)",
   },
   emptyText: {
     margin: 0,
@@ -213,7 +227,7 @@ const styles = {
     background: "white",
     borderRadius: "22px",
     padding: "20px",
-    boxShadow: "0 12px 30px rgba(0,0,0,0.08)",
+    boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
     flexWrap: "wrap",
   },
   image: {
@@ -227,10 +241,18 @@ const styles = {
     flex: 1,
     minWidth: "220px",
   },
+  category: {
+    margin: "0 0 6px",
+    color: "#b06b3f",
+    fontSize: "12px",
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
   itemTitle: {
     margin: "0 0 8px",
-    fontSize: "22px",
-    color: "#222",
+    fontSize: "30px",
+    color: "#111",
+    fontFamily: "Georgia, serif",
   },
   artist: {
     margin: "0 0 10px",
@@ -238,9 +260,9 @@ const styles = {
   },
   price: {
     margin: "0 0 18px",
-    fontWeight: "600",
-    fontSize: "18px",
-    color: "#8b5e3c",
+    fontWeight: "700",
+    fontSize: "22px",
+    color: "#111",
   },
   controlsRow: {
     display: "flex",
@@ -259,7 +281,7 @@ const styles = {
     height: "40px",
     borderRadius: "10px",
     border: "none",
-    background: "#1f1f1f",
+    background: "#111",
     color: "white",
     fontSize: "20px",
     cursor: "pointer",
@@ -271,8 +293,8 @@ const styles = {
     fontWeight: "600",
   },
   removeBtn: {
-    background: "#f3e7e1",
-    color: "#b14d2f",
+    background: "#f3e7e3",
+    color: "#9f2d20",
     border: "none",
     padding: "10px 16px",
     borderRadius: "10px",
@@ -284,7 +306,7 @@ const styles = {
     background: "white",
     borderRadius: "20px",
     padding: "24px",
-    boxShadow: "0 10px 25px rgba(0,0,0,0.06)",
+    boxShadow: "0 10px 24px rgba(0,0,0,0.06)",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
@@ -293,17 +315,18 @@ const styles = {
   },
   total: {
     margin: 0,
-    fontSize: "28px",
-    color: "#1f1f1f",
+    fontSize: "30px",
+    color: "#111",
+    fontFamily: "Georgia, serif",
   },
   checkoutBtn: {
-    background: "#1f1f1f",
+    background: "#111",
     color: "white",
     border: "none",
     padding: "14px 22px",
-    borderRadius: "999px",
+    borderRadius: "14px",
     cursor: "pointer",
-    fontWeight: "600",
+    fontWeight: "700",
   },
 };
 
