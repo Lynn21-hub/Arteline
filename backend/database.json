@@ -1,0 +1,11 @@
+{
+  "artworks": [
+    {
+      "id": 1,
+      "title": "Mona Lisa",
+      "description": "Cool painting",
+      "price": 100
+    }
+  ],
+  "orders": []
+}
