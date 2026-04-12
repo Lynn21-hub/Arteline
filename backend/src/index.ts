@@ -16,7 +16,7 @@ app.use(express.json());
 
 app.use("/auth", authRoutes);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 console.log("ENV CHECK:", {
   PORT: process.env.PORT,
