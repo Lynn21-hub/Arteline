@@ -12,7 +12,7 @@ function Cart() {
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
   const [error, setError] = useState("");
-  const [, setCheckout] = useState(null);
+  const [checkout, setCheckout] = useState(null);
   const navigate = useNavigate();
 
   const loadCart = async () => {
@@ -26,7 +26,7 @@ function Cart() {
       ]);
 
       setCartItems(cartData.items || []);
-      setCheckout(checkoutData);
+      setCheckout(checkoutData || null);
     } catch (err) {
       console.error("Error loading cart:", err);
       setError(err.response?.data?.message || "Failed to load cart.");
@@ -46,7 +46,7 @@ function Cart() {
       await loadCart();
     } catch (err) {
       console.error("Error increasing quantity:", err);
-      setError("Could not update quantity.");
+      setError(err.response?.data?.message || "Could not update quantity.");
     } finally {
       setUpdatingId(null);
     }
@@ -59,7 +59,7 @@ function Cart() {
       await loadCart();
     } catch (err) {
       console.error("Error decreasing quantity:", err);
-      setError("Could not update quantity.");
+      setError(err.response?.data?.message || "Could not update quantity.");
     } finally {
       setUpdatingId(null);
     }
@@ -72,17 +72,19 @@ function Cart() {
       await loadCart();
     } catch (err) {
       console.error("Error removing item:", err);
-      setError("Could not remove item.");
+      setError(err.response?.data?.message || "Could not remove item.");
     } finally {
       setUpdatingId(null);
     }
   };
 
-  const totalPrice = cartItems.reduce((sum, item) => {
-    const price = Number(item.artwork?.price || 0);
-    const quantity = Number(item.quantity || 1);
-    return sum + price * quantity;
-  }, 0);
+  const totalPrice =
+    checkout?.total ??
+    cartItems.reduce((sum, item) => {
+      const price = Number(item.price || 0);
+      const quantity = Number(item.quantity || 1);
+      return sum + price * quantity;
+    }, 0);
 
   if (loading) {
     return <div style={styles.message}>Loading cart...</div>;
@@ -103,23 +105,28 @@ function Cart() {
         <>
           <div style={styles.cartList}>
             {cartItems.map((item) => {
-              const artworkId = item.artwork_id;
+              const artworkId = item.artworkId;
               const quantity = item.quantity;
-              const artwork = item.artwork;
 
               return (
-                <div key={item.id} style={styles.card}>
+                <div key={item.cartItemId} style={styles.card}>
                   <img
-                    src={artwork?.image_url || "https://via.placeholder.com/160"}
-                    alt={artwork?.title || "Artwork"}
+                    src={item.image_url || "https://via.placeholder.com/160"}
+                    alt={item.title || "Artwork"}
                     style={styles.image}
                   />
 
                   <div style={styles.info}>
-                    <p style={styles.category}>{artwork?.category || "Artwork"}</p>
-                    <h3 style={styles.itemTitle}>{artwork?.title || "Untitled Artwork"}</h3>
-                    <p style={styles.artist}>by {artwork?.artist_name || "Unknown Artist"}</p>
-                    <p style={styles.price}>${artwork?.price || 0}</p>
+                    <p style={styles.category}>{item.category || "ARTWORK"}</p>
+                    <h3 style={styles.itemTitle}>
+                      {item.title || "Untitled Artwork"}
+                    </h3>
+                    <p style={styles.artist}>
+                      by {item.artist_name || "Unknown Artist"}
+                    </p>
+                    <p style={styles.price}>
+                      ${Number(item.price || 0).toFixed(2)}
+                    </p>
 
                     <div style={styles.controlsRow}>
                       <div style={styles.quantityBox}>
@@ -157,8 +164,11 @@ function Cart() {
           </div>
 
           <div style={styles.summaryBox}>
-            <h2 style={styles.total}>Total: ${totalPrice.toFixed(2)}</h2>
-            <button style={styles.checkoutBtn} onClick={() => navigate("/checkout")}>
+            <h2 style={styles.total}>Total: ${Number(totalPrice).toFixed(2)}</h2>
+            <button
+              style={styles.checkoutBtn}
+              onClick={() => navigate("/checkout")}
+            >
               Proceed to Checkout
             </button>
           </div>

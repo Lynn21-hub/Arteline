@@ -1,6 +1,6 @@
 import { fetchAuthSession } from "aws-amplify/auth";
 
-const BASE_URL = "http://localhost:5000/api/artworks";
+const BASE_URL = "http://localhost:5001/api/artworks";
 
 const parseResponse = async (res) => {
   const data = await res.json();

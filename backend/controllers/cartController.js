@@ -148,13 +148,34 @@ const getCartItems = async (req, res) => {
   try {
     const userId = req.user.sub;
 
-    const items = await prisma.cartItem.findMany({
+    const cartItems = await prisma.cartItem.findMany({
       where: {
         user_id: userId,
+      },
+      include: {
+        artwork: true,
       },
       orderBy: {
         created_at: "desc",
       },
+    });
+
+    const items = cartItems.map((item) => {
+      const price = Number(item.artwork?.price || 0);
+      const quantity = item.quantity;
+      const lineTotal = price * quantity;
+
+      return {
+        cartItemId: item.id,
+        artworkId: item.artwork?.id,
+        title: item.artwork?.title || "Untitled Artwork",
+        image_url: item.artwork?.image_url || "",
+        artist_name: item.artwork?.artist_name || "Unknown Artist",
+        price,
+        quantity,
+        lineTotal,
+        inventory: item.artwork?.inventory ?? 0,
+      };
     });
 
     return res.status(200).json({
@@ -168,7 +189,6 @@ const getCartItems = async (req, res) => {
     });
   }
 };
-
 const updateCartQuantity = async (req, res) => {
   try {
     const userId = req.user.sub;
@@ -211,6 +231,22 @@ const updateCartQuantity = async (req, res) => {
 
       return res.status(200).json({
         message: "Item removed from cart because quantity reached 0",
+      });
+    }
+
+    const artwork = await prisma.artwork.findUnique({
+      where: { id: artId },
+    });
+
+    if (!artwork) {
+      return res.status(404).json({
+        message: "Artwork not found",
+      });
+    }
+
+    if (qty > artwork.inventory) {
+      return res.status(400).json({
+        message: `Only ${artwork.inventory} item(s) available in stock`,
       });
     }
 

@@ -1,138 +1,170 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { getArtworkById } from "../api/artworkAPI";
+import { addToCart } from "../api/cartAPI";
 
 function ArtworkDetails() {
-    const { id } = useParams();
-    const [artwork, setArtwork] = useState(null);
-    const [loading, setLoading] = useState(true);
+  const { id } = useParams();
+  const [artwork, setArtwork] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [cartStatus, setCartStatus] = useState("idle");
 
-    /* useEffect(() => {
-      fetch(`http://localhost:5000/api/artworks/${id}`)
-        .then((res) => res.json())
-        .then((data) => {
-          setArtwork(data);
-          setLoading(false);
-        })
-        .catch((err) => {
-          console.error("Error fetching artwork:", err);
-          setLoading(false);
-        });
-    }, [id]); */
-    useEffect(() => {
-        const MOCK_ARTWORKS = [
-            { id: 1, title: "Crimson Reverie", artist: "Layla Mansour", price: 480, category: "Painting", image_url: "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=600&q=80", description: "A rich abstract composition with bold crimson tones.", format: "Canvas", inventory: 2 },
-            { id: 2, title: "Silent Portrait I", artist: "Omar Faris", price: 320, category: "Portrait", image_url: "https://images.unsplash.com/photo-1578301978693-85fa9c0320b9?w=600&q=80", description: "A calm portrait focusing on emotion and stillness.", format: "Framed Print", inventory: 1 },
-            { id: 3, title: "Stone & Memory", artist: "Nadia Khalil", price: 950, category: "Sculpture", image_url: "https://images.unsplash.com/photo-1555448248-2571daf6344b?w=600&q=80", description: "A sculpture exploring memory and permanence.", format: "Marble", inventory: 1 }
-        ];
-
-        const foundArtwork = MOCK_ARTWORKS.find((a) => a.id === Number(id));
-        setArtwork(foundArtwork || null);
+  useEffect(() => {
+    const fetchArtwork = async () => {
+      try {
+        setLoading(true);
+        const data = await getArtworkById(id);
+        setArtwork(data);
+      } catch (err) {
+        console.error("Error fetching artwork:", err);
+        setArtwork(null);
+      } finally {
         setLoading(false);
-    }, [id]);
+      }
+    };
 
+    fetchArtwork();
+  }, [id]);
 
-    if (loading) {
-        return (
-            <>
-                <style>{css}</style>
-                <div className="details-page">
-                    <div className="details-loading">Loading artwork...</div>
-                </div>
-            </>
-        );
+  const handleAddToCart = async () => {
+    if (!artwork || artwork.inventory <= 0) return;
+
+    try {
+      setCartStatus("loading");
+      await addToCart(artwork.id, 1);
+      setCartStatus("added");
+      setTimeout(() => setCartStatus("idle"), 2000);
+    } catch (err) {
+      console.error("Error adding to cart:", err);
+      setCartStatus("error");
+      setTimeout(() => setCartStatus("idle"), 2000);
     }
+  };
 
-    if (!artwork || artwork.message) {
-        return (
-            <>
-                <style>{css}</style>
-                <div className="details-page">
-                    <div className="details-notfound">
-                        <h2>Artwork not found</h2>
-                        <Link to="/artworks" className="back-btn">
-                            Back to artworks
-                        </Link>
-                    </div>
-                </div>
-            </>
-        );
-    }
+  const addToCartLabel =
+    cartStatus === "loading"
+      ? "Adding..."
+      : cartStatus === "added"
+      ? "Added!"
+      : cartStatus === "error"
+      ? "Try again"
+      : "Add to Cart";
 
+  if (loading) {
     return (
-        <>
-            <style>{css}</style>
-
-            <div className="details-page">
-                <div className="details-topbar">
-                    <Link to="/artworks" className="back-btn">
-                        ← Back to artworks
-                    </Link>
-                </div>
-
-                <div className="details-card">
-                    <div className="details-image-section">
-                        <img
-                            src={artwork.image_url}
-                            alt={artwork.title}
-                            className="details-image"
-                        />
-                    </div>
-
-                    <div className="details-info-section">
-                        <p className="details-category">{artwork.category}</p>
-                        <h1 className="details-title">{artwork.title}</h1>
-                        <p className="details-artist">
-                            by {artwork.artist_name || artwork.artist}
-                        </p>
-
-                        <div className="details-price-row">
-                            <span className="details-price">
-                                ${Number(artwork.price).toLocaleString()}
-                            </span>
-                            <span className="details-stock">
-                                {artwork.inventory > 0 ? `In stock: ${artwork.inventory}` : "Out of stock"}
-                            </span>
-                        </div>
-
-                        <p className="details-description">
-                            {artwork.description || "No description available for this artwork."}
-                        </p>
-
-                        <div className="details-meta">
-                            <div className="meta-box">
-                                <span className="meta-label">Category</span>
-                                <span className="meta-value">{artwork.category || "—"}</span>
-                            </div>
-
-                            <div className="meta-box">
-                                <span className="meta-label">Format</span>
-                                <span className="meta-value">{artwork.format || "—"}</span>
-                            </div>
-
-                            <div className="meta-box">
-                                <span className="meta-label">Artist</span>
-                                <span className="meta-value">
-                                    {artwork.artist_name || artwork.artist || "—"}
-                                </span>
-                            </div>
-
-                            <div className="meta-box">
-                                <span className="meta-label">Availability</span>
-                                <span className="meta-value">
-                                    {artwork.inventory > 0 ? "Available" : "Unavailable"}
-                                </span>
-                            </div>
-                        </div>
-
-                        <div className="details-actions">
-                            <button className="primary-btn">Add to Cart</button>
-                            <button className="secondary-btn">Add to Wishlist</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </>
+      <>
+        <style>{css}</style>
+        <div className="details-page">
+          <div className="details-loading">Loading artwork...</div>
+        </div>
+      </>
     );
+  }
+
+  if (!artwork || artwork.message) {
+    return (
+      <>
+        <style>{css}</style>
+        <div className="details-page">
+          <div className="details-notfound">
+            <h2>Artwork not found</h2>
+            <Link to="/artworks" className="back-btn">
+              ← Back to artworks
+            </Link>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <style>{css}</style>
+
+      <div className="details-page">
+        <div className="details-topbar">
+          <Link to="/artworks" className="back-btn">
+            ← Back to artworks
+          </Link>
+        </div>
+
+        <div className="details-card">
+          <div className="details-image-section">
+            <img
+              src={artwork.image_url}
+              alt={artwork.title}
+              className="details-image"
+            />
+          </div>
+
+          <div className="details-info-section">
+            <p className="details-category">{artwork.category}</p>
+            <h1 className="details-title">{artwork.title}</h1>
+            <p className="details-artist">
+              by {artwork.artist_name}
+            </p>
+
+            <div className="details-price-row">
+              <span className="details-price">
+                ${Number(artwork.price).toLocaleString()}
+              </span>
+              <span className="details-stock">
+                {artwork.inventory > 0
+                  ? `In stock: ${artwork.inventory}`
+                  : "Out of stock"}
+              </span>
+            </div>
+
+            <p className="details-description">
+              {artwork.description || "No description available for this artwork."}
+            </p>
+
+            <div className="details-meta">
+              <div className="meta-box">
+                <span className="meta-label">Category</span>
+                <span className="meta-value">{artwork.category || "—"}</span>
+              </div>
+
+              <div className="meta-box">
+                <span className="meta-label">Format</span>
+                <span className="meta-value">{artwork.format || "—"}</span>
+              </div>
+
+              <div className="meta-box">
+                <span className="meta-label">Artist</span>
+                <span className="meta-value">{artwork.artist_name || "—"}</span>
+              </div>
+
+              <div className="meta-box">
+                <span className="meta-label">Availability</span>
+                <span className="meta-value">
+                  {artwork.inventory > 0 ? "Available" : "Unavailable"}
+                </span>
+              </div>
+            </div>
+
+            <div className="details-actions">
+              <button
+                className={`primary-btn ${
+                  cartStatus === "added"
+                    ? "primary-btn--added"
+                    : cartStatus === "error"
+                    ? "primary-btn--error"
+                    : ""
+                }`}
+                onClick={handleAddToCart}
+                disabled={cartStatus === "loading" || artwork.inventory <= 0}
+              >
+                {addToCartLabel}
+              </button>
+
+              <button className="secondary-btn">Add to Wishlist</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
 }
 
 const css = `
@@ -306,8 +338,16 @@ const css = `
     color: white;
   }
 
-  .primary-btn:hover {
+  .primary-btn:hover:enabled {
     background: #b46b3f;
+  }
+
+  .primary-btn--added {
+    background: #2e7d32;
+  }
+
+  .primary-btn--error {
+    background: #c62828;
   }
 
   .secondary-btn {
