@@ -27,30 +27,44 @@ Amplify.configure({
   },
 });
 
-const baseNavBtn = {
+/* Load fonts once */
+if (!document.getElementById("arteline-app-fonts")) {
+  const link = document.createElement("link");
+  link.id = "arteline-app-fonts";
+  link.rel = "stylesheet";
+  link.href =
+    "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Outfit:wght@300;400;500;600&display=swap";
+  document.head.appendChild(link);
+}
+
+const artelineColors = {
+  parchment: "#f7f3ed",
+  ink: "#0d0c0a",
+  gold: "#c9a84c",
+  border: "rgba(13,12,10,0.09)",
+};
+
+const navBtnBase = {
   all: "unset",
-  background: "transparent",
-  fontSize: "15px",
   cursor: "pointer",
-  fontWeight: "500",
-  color: "#111",
-  padding: "6px 4px",
-  outline: "none",
-  boxShadow: "none",
-  lineHeight: "1.2",
-  display: "inline-flex",
-  alignItems: "center",
-  borderBottom: "2px solid transparent",
+  fontSize: "14px",
+  fontWeight: "400",
+  color: artelineColors.ink,
+  opacity: 0.72,
+  padding: "4px 0",
+  borderBottom: "1.5px solid transparent",
+  fontFamily: "'Outfit', 'Poppins', Arial, sans-serif",
+  transition: "opacity 0.2s ease, border-color 0.2s ease, color 0.2s ease",
 };
 
 const profileBtnBase = {
   all: "unset",
-  width: "36px",
-  height: "36px",
+  width: "38px",
+  height: "38px",
   borderRadius: "10px",
-  border: "1px solid #d8c8b8",
-  background: "#fffaf3",
-  color: "#7a4e2f",
+  border: `1px solid ${artelineColors.border}`,
+  background: "transparent",
+  color: artelineColors.ink,
   cursor: "pointer",
   fontSize: "18px",
   display: "inline-flex",
@@ -117,98 +131,105 @@ function App() {
   const getNavStyle = (path) => {
     const isActive = location.pathname === path;
     return {
-      ...baseNavBtn,
-      color: isActive ? "#ff6b35" : "#111",
-      borderBottom: isActive ? "2px solid #ff6b35" : "2px solid transparent",
+      ...navBtnBase,
+      color: isActive ? artelineColors.gold : artelineColors.ink,
+      opacity: isActive ? 1 : 0.72,
+      borderBottom: isActive
+        ? `1.5px solid ${artelineColors.gold}`
+        : "1.5px solid transparent",
     };
   };
 
   const renderNavItems = () => {
     if (userRole === "collector") {
-      return (
-        <>
-          <button className="nav-btn" onClick={() => navigate("/")} style={getNavStyle("/")}>
-            Home
-          </button>
-
-          <button className="nav-btn" onClick={() => navigate("/artworks")} style={getNavStyle("/artworks")}>
-            Artworks
-          </button>
-
-          <button className="nav-btn" onClick={() => navigate("/cart")} style={getNavStyle("/cart")}>
-            Cart
-          </button>
-
-          <button className="nav-btn" onClick={() => navigate("/orders")} style={getNavStyle("/orders")}>
-            Orders
-          </button>
-
-          <button className="nav-btn" onClick={() => navigate("/profile")} style={getNavStyle("/profile")}>
-            My information
-          </button>
-        </>
-      );
+      return [
+        { label: "Home", path: "/" },
+        { label: "Artworks", path: "/artworks" },
+        { label: "Cart", path: "/cart" },
+        { label: "Orders", path: "/orders" },
+        { label: "My information", path: "/profile" },
+      ];
     }
 
-    return (
-      <>
-        <button className="nav-btn" onClick={() => navigate("/")} style={getNavStyle("/")}>
-          Home
-        </button>
-
-        <button className="nav-btn" onClick={() => navigate("/artworks")} style={getNavStyle("/artworks")}>
-          Artworks
-        </button>
-
-        <button
-          className="nav-btn"
-          onClick={() => navigate("/artist/inventory")}
-          style={getNavStyle("/artist/inventory")}
-        >
-          My Inventory
-        </button>
-
-        <button
-          className="nav-btn"
-          onClick={() => navigate("/artist/artworks/new")}
-          style={getNavStyle("/artist/artworks/new")}
-        >
-          Add Artwork
-        </button>
-      </>
-    );
+    return [
+      { label: "Home", path: "/" },
+      { label: "Artworks", path: "/artworks" },
+      { label: "My Inventory", path: "/artist/inventory" },
+      { label: "Add Artwork", path: "/artist/artworks/new" },
+    ];
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f7f4ef" }}>
-      {/* ROLE SELECTOR */}
+    <div
+      style={{
+        minHeight: "100vh",
+        background: artelineColors.parchment,
+        fontFamily: "'Outfit', 'Poppins', Arial, sans-serif",
+      }}
+    >
       {showRoleSelector && <RoleSelector onSelectRole={handleSelectRole} />}
 
-      {/* NAVBAR */}
       {!showRoleSelector && (
         <div
           style={{
-            padding: "16px 28px",
+            position: "sticky",
+            top: 0,
+            zIndex: 1000,
+            background: "rgba(247,243,237,0.96)",
+            backdropFilter: "blur(16px)",
+            borderBottom: `1px solid ${artelineColors.border}`,
+            padding: "18px 38px",
             display: "flex",
-            justifyContent: "space-between",
             alignItems: "center",
-            position: "relative",
-            background: "#f7f4ef",
-            borderBottom: "none",
+            justifyContent: "space-between",
+            gap: "24px",
           }}
         >
-          <div style={{ display: "flex", gap: "24px", alignItems: "center" }}>
-            {renderNavItems()}
+          <div
+            onClick={() => navigate("/")}
+            style={{
+              fontFamily: "'Playfair Display', serif",
+              fontSize: "28px",
+              fontWeight: 700,
+              color: artelineColors.ink,
+              cursor: "pointer",
+              letterSpacing: "-0.5px",
+              flexShrink: 0,
+            }}
+          >
+            Arté<span style={{ color: artelineColors.gold, fontStyle: "italic" }}>line</span>
           </div>
 
-          <div style={{ position: "relative" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "30px",
+              flexWrap: "wrap",
+              flex: 1,
+            }}
+          >
+            {renderNavItems().map((item) => (
+              <button
+                key={item.label}
+                className="nav-btn"
+                onClick={() => navigate(item.path)}
+                style={getNavStyle(item.path)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ position: "relative", flexShrink: 0 }}>
             <button
               className="profile-btn"
               onClick={handleProfileClick}
               style={{
                 ...profileBtnBase,
-                background: showDropdown ? "#f3e7dc" : "#fffaf3",
-                borderColor: showDropdown ? "#c9a88c" : "#d8c8b8",
+                background: showDropdown ? "#f3ede6" : "transparent",
+                borderColor: showDropdown ? "#c9a84c" : artelineColors.border,
               }}
               aria-label="Account menu"
               title="Account"
@@ -216,16 +237,11 @@ function App() {
               👤
             </button>
 
-            {showDropdown && (
-              <ProfileDropdown
-                onLogout={handleLogout}
-              />
-            )}
+            {showDropdown && <ProfileDropdown onLogout={handleLogout} />}
           </div>
         </div>
       )}
 
-      {/* AUTH MODAL */}
       {!showRoleSelector && showModal && (
         <AuthModal
           onClose={() => setShowModal(false)}
@@ -234,7 +250,6 @@ function App() {
         />
       )}
 
-      {/* ROUTES */}
       {!showRoleSelector && (
         <Routes>
           <Route path="/" element={<Home />} />
