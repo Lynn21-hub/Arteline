@@ -9,3 +9,4 @@ output "db_port" {
 output "db_name" {
   value = aws_db_instance.mysql.db_name
 }
+
