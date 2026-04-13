@@ -1,7 +1,9 @@
 import { fetchAuthSession } from "aws-amplify/auth";
 import axios from "axios";
 
-const API_URL = "http://localhost:5001";
+
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5001";
+
 
 const getToken = async () => {
   const session = await fetchAuthSession();

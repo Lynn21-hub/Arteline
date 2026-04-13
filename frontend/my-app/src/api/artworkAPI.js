@@ -1,6 +1,7 @@
 import { fetchAuthSession } from "aws-amplify/auth";
 
-const BASE_URL = "http://localhost:5001/api/artworks";
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5001";
+const BASE_URL = `${API_URL}/api/artworks`;
 
 const parseResponse = async (res) => {
   const data = await res.json();
@@ -10,7 +11,7 @@ const parseResponse = async (res) => {
   return data;
 };
 
-const getAuthHeaders = async () => {
+const getAuthHeaders = async () => {    
   const session = await fetchAuthSession();
   const token = session.tokens?.accessToken?.toString();
 
