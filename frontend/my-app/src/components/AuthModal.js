@@ -13,8 +13,6 @@ function AuthModal({ onClose, onLoginSuccess, userRole }) {
         {/* LEFT IMAGE */}
         <div style={styles.left}>
           <div style={styles.overlayText}>
-            <h1>Artéline</h1>
-            <p>Discover modern art</p>
           </div>
         </div>
 

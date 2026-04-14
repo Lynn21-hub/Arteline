@@ -105,61 +105,89 @@ function AuthForm({ onLoginSuccess, userRole }) {
   );
 }
 
+const C = {
+  parchment: "#f7f3ed",
+  ink: "#0d0c0a",
+  gold: "#c9a84c",
+  muted: "#7a756e",
+  white: "#ffffff",
+};
+
 const styles = {
   container: {
     width: "100%",
+    display: "flex",
+    justifyContent: "center",
   },
 
   form: {
     display: "flex",
     flexDirection: "column",
     width: "100%",
-    maxWidth: "350px",
+    maxWidth: "420px",
+    padding: "40px",
+    background: C.white,
+    borderRadius: "4px",
+    boxShadow: "0 20px 60px rgba(0,0,0,0.08)",
+    border: "1px solid rgba(13,12,10,0.05)",
   },
 
   title: {
+    fontFamily: "'Playfair Display', serif",
+    fontSize: "32px",
+    fontWeight: "700",
+    color: C.ink,
     marginBottom: "10px",
-    fontSize: "26px",
-    fontWeight: "600",
-    color: "#ff6b35", // 🔥 ORANGE
   },
 
   subtitle: {
-    marginBottom: "20px",
+    marginBottom: "24px",
     fontSize: "14px",
-    color: "#666",
+    color: C.muted,
+    fontWeight: "300",
   },
 
   input: {
-    marginBottom: "15px",
-    padding: "12px",
-    borderRadius: "6px",
-    border: "1px solid #ccc",
+    marginBottom: "16px",
+    padding: "14px",
+    borderRadius: "3px",
+    border: "1px solid rgba(13,12,10,0.15)",
+    fontFamily: "'Outfit', sans-serif",
+    fontSize: "14px",
+    outline: "none",
+    transition: "border 0.2s",
   },
 
   button: {
-    padding: "12px",
-    backgroundColor: "#ff6b35", // 🔥 ORANGE BUTTON
-    color: "#fff",
+    padding: "14px",
+    backgroundColor: C.ink,
+    color: C.white,
     border: "none",
-    borderRadius: "6px",
+    borderRadius: "2px",
     cursor: "pointer",
+    fontFamily: "'Outfit', sans-serif",
+    fontSize: "14px",
+    fontWeight: "500",
+    letterSpacing: "0.5px",
+    transition: "background 0.2s",
   },
 
   toggle: {
-    marginTop: "15px",
-    fontSize: "14px",
+    marginTop: "18px",
+    fontSize: "13px",
+    color: C.muted,
   },
 
   link: {
-    color: "#ff6b35",
-    fontWeight: "bold",
+    color: C.gold,
+    fontWeight: "500",
     cursor: "pointer",
   },
 
   error: {
-    color: "red",
+    color: "#d64545",
     marginBottom: "10px",
+    fontSize: "13px",
   },
 };
 
