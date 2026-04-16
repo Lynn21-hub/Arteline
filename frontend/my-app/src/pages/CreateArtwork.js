@@ -131,14 +131,17 @@ function CreateArtwork() {
     setLoading(true);
 
     try {
-      await createArtwork({
-        ...form,
-        price: Number(form.price),
-        inventory: Number(form.inventory),
+      const formData = new FormData();
+
+      Object.keys(form).forEach((key) => {
+        formData.append(key, form[key]);
       });
+
+      await createArtwork(formData);
+
       navigate("/artist/inventory");
     } catch (error) {
-      console.error("Error creating artwork:", error);
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -226,10 +229,11 @@ function CreateArtwork() {
             />
 
             <input
-              name="image_url"
-              placeholder="Image URL"
-              value={form.image_url}
-              onChange={handleChange}
+              type="file"
+              name="image"
+              onChange={(e) =>
+                setForm({ ...form, image: e.target.files[0] })
+              }
             />
 
             <textarea

@@ -1,5 +1,71 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
+const { PutObjectCommand } = require("@aws-sdk/client-s3");
+const s3 = require("../config/s3");
+
+exports.createArtwork = async (req, res) => {
+  try {
+    const userSub = req.user?.sub;
+    if (!userSub) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const file = req.file;
+
+    let imageUrl = null;
+    let s3_key = null;
+
+    if (file) {
+      const key = `artworks/${Date.now()}-${file.originalname}`;
+
+      const command = new PutObjectCommand({
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: key,
+        Body: file.buffer,
+        ContentType: file.mimetype,
+      });
+
+      await s3.send(command);
+
+      imageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+      s3_key = key;
+    }
+
+    const {
+      title,
+      description,
+      category,
+      format,
+      price,
+      inventory,
+      artist_name,
+    } = req.body;
+
+    if (!title || !price) {
+      return res.status(400).json({ message: "Title and price are required" });
+    }
+
+    const artwork = await prisma.artwork.create({
+      data: {
+        title,
+        description,
+        category,
+        format,
+        price: Number(price),
+        inventory: inventory ? Number(inventory) : 1,
+        artist_name,
+        image_url: imageUrl,   
+        s3_key,               
+        creator_sub: userSub,
+      },
+    });
+
+    res.status(201).json(artwork);
+  } catch (error) {
+    console.error("Error creating artwork:", error);
+    res.status(500).json({ message: "Error creating artwork" });
+  }
+};
 
 exports.getAllArtworks = async (req, res) => {
   try {
@@ -59,50 +125,6 @@ exports.getArtworkById = async (req, res) => {
   }
 };
 
-exports.createArtwork = async (req, res) => {
-  try {
-    const userSub = req.user?.sub;
-    if (!userSub) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    const {
-      title,
-      description,
-      category,
-      format,
-      price,
-      inventory,
-      artist_name,
-      image_url,
-      s3_key,
-    } = req.body;
-
-    if (!title || !price) {
-      return res.status(400).json({ message: "Title and price are required" });
-    }
-
-    const artwork = await prisma.artwork.create({
-      data: {
-        title,
-        description,
-        category,
-        format,
-        price,
-        inventory: inventory ? Number(inventory) : 1,
-        artist_name,
-        image_url,
-        s3_key,
-        creator_sub: userSub,
-      },
-    });
-
-    res.status(201).json(artwork);
-  } catch (error) {
-    console.error("Error creating artwork:", error);
-    res.status(500).json({ message: "Error creating artwork" });
-  }
-};
 
 exports.updateArtwork = async (req, res) => {
   try {

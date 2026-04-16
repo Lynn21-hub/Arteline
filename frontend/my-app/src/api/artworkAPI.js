@@ -11,7 +11,7 @@ const parseResponse = async (res) => {
   return data;
 };
 
-const getAuthHeaders = async () => {    
+const getAuthHeaders = async () => {
   const session = await fetchAuthSession();
   const token = session.tokens?.accessToken?.toString();
 
@@ -42,16 +42,6 @@ export async function getArtworkById(id) {
   return parseResponse(res);
 }
 
-export async function createArtwork(data) {
-  const res = await fetch(BASE_URL, {
-    method: "POST",
-    headers: await getAuthHeaders(),
-    body: JSON.stringify(data),
-  });
-
-  return parseResponse(res);
-}
-
 export async function updateArtwork(id, data) {
   const res = await fetch(`${BASE_URL}/${id}`, {
     method: "PUT",
@@ -70,3 +60,18 @@ export async function deleteArtwork(id) {
 
   return parseResponse(res);
 }
+
+export const createArtwork = async (data) => {
+  const session = await fetchAuthSession();
+  const token = session.tokens?.accessToken?.toString();
+
+  const res = await fetch(BASE_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: data,
+  });
+
+  return parseResponse(res);
+};
