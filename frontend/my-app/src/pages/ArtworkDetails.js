@@ -36,7 +36,8 @@ function ArtworkDetails() {
       setTimeout(() => setCartStatus("idle"), 2000);
     } catch (err) {
       console.error("Error adding to cart:", err);
-      setCartStatus("error");
+      const message = err.response?.data?.message?.toLowerCase() || "";
+      setCartStatus(message.includes("out of stock") ? "out-of-stock" : "error");
       setTimeout(() => setCartStatus("idle"), 2000);
     }
   };
@@ -46,6 +47,8 @@ function ArtworkDetails() {
       ? "Adding..."
       : cartStatus === "added"
       ? "Added!"
+      : cartStatus === "out-of-stock" || artwork?.inventory <= 0
+      ? "Out of stock"
       : cartStatus === "error"
       ? "Try again"
       : "Add to Cart";
@@ -148,6 +151,8 @@ function ArtworkDetails() {
                 className={`primary-btn ${
                   cartStatus === "added"
                     ? "primary-btn--added"
+                    : cartStatus === "out-of-stock" || artwork.inventory <= 0
+                    ? "primary-btn--disabled"
                     : cartStatus === "error"
                     ? "primary-btn--error"
                     : ""

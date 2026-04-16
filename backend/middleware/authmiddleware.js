@@ -1,6 +1,12 @@
 const { CognitoJwtVerifier } = require("aws-jwt-verify");
 
-const verifier = CognitoJwtVerifier.create({
+const idTokenVerifier = CognitoJwtVerifier.create({
+  userPoolId: process.env.USER_POOL_ID,
+  tokenUse: "id",
+  clientId: process.env.USER_POOL_CLIENT_ID,
+});
+
+const accessTokenVerifier = CognitoJwtVerifier.create({
   userPoolId: process.env.USER_POOL_ID,
   tokenUse: "access",
   clientId: process.env.USER_POOL_CLIENT_ID,
@@ -20,7 +26,13 @@ const verifyCognitoToken = async (req, res, next) => {
     }
 
     const token = authHeader.split(" ")[1];
-    const payload = await verifier.verify(token);
+    let payload;
+
+    try {
+      payload = await idTokenVerifier.verify(token);
+    } catch (idTokenError) {
+      payload = await accessTokenVerifier.verify(token);
+    }
 
     console.log("TOKEN VERIFIED:", payload);
 

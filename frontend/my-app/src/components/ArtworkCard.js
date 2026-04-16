@@ -5,17 +5,20 @@ import { useNavigate } from "react-router-dom";
 function ArtworkCard({ artwork }) {
   const [status, setStatus] = useState("idle");
   const navigate = useNavigate();
+  const isOutOfStock = artwork.inventory <= 0;
 
   const handleAddToCart = async (e) => {
     e.stopPropagation();
+    if (isOutOfStock) return;
     setStatus("loading");
 
     try {
       await addToCart(artwork.id, 1);
       setStatus("added");
       setTimeout(() => setStatus("idle"), 2000);
-    } catch {
-      setStatus("error");
+    } catch (error) {
+      const message = error.response?.data?.message?.toLowerCase() || "";
+      setStatus(message.includes("out of stock") ? "out-of-stock" : "error");
       setTimeout(() => setStatus("idle"), 2000);
     }
   };
@@ -25,6 +28,8 @@ function ArtworkCard({ artwork }) {
       ? "Adding..."
       : status === "added"
       ? "Added!"
+      : status === "out-of-stock" || isOutOfStock
+      ? "Out of stock"
       : status === "error"
       ? "Try again"
       : "Add to Cart";
@@ -48,7 +53,7 @@ function ArtworkCard({ artwork }) {
             <button
               className={`cart-btn cart-btn--${status}`}
               onClick={handleAddToCart}
-              disabled={status === "loading"}
+              disabled={status === "loading" || isOutOfStock}
             >
               {btnLabel}
             </button>
@@ -164,6 +169,11 @@ const css = `
 
   .cart-btn--error {
     background: #c62828;
+  }
+
+  .cart-btn--out-of-stock {
+    background: #7a746d;
+    cursor: not-allowed;
   }
 `;
 

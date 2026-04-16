@@ -1,88 +1,25 @@
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
-const Stripe = require("stripe");
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const prisma = require("../lib/prisma");
+const stripe = require("../lib/stripe");
+const {
+  ORDER_STATUS,
+  PAYMENT_METHOD,
+  PAYMENT_STATUS,
+  findOrderByStripeSessionId,
+  finalizeOrderFromCart,
+  getValidatedCartSnapshot,
+  normalizeShippingDetails,
+} = require("../services/orderService");
 
 const placeOrderCOD = async (req, res) => {
   try {
     const userId = req.user.sub;
-
-    const cartItems = await prisma.cartItem.findMany({
-      where: { user_id: userId },
-      include: { artwork: true },
-    });
-
-    if (!cartItems.length) {
-      return res.status(400).json({
-        message: "Cannot place order because cart is empty",
-      });
-    }
-
-    for (const item of cartItems) {
-      if (!item.artwork) {
-        return res.status(404).json({
-          message: `Artwork not found for cart item ${item.id}`,
-        });
-      }
-
-      if (item.artwork.inventory < item.quantity) {
-        return res.status(400).json({
-          message: `Not enough stock for ${item.artwork.title}`,
-        });
-      }
-    }
-
-    const subtotal = cartItems.reduce((sum, item) => {
-      return sum + Number(item.artwork.price) * item.quantity;
-    }, 0);
-
-    const shipping = 0;
-    const tax = 0;
-    const total = subtotal + shipping + tax;
-
-    const order = await prisma.$transaction(async (tx) => {
-      const createdOrder = await tx.order.create({
-        data: {
-          user_id: userId,
-          subtotal,
-          shipping,
-          tax,
-          total,
-          status: "PLACED",
-          payment_method: "COD",
-          payment_status: "PENDING",
-        },
-      });
-
-      for (const item of cartItems) {
-        const price = Number(item.artwork.price);
-        const lineTotal = price * item.quantity;
-
-        await tx.orderItem.create({
-          data: {
-            order_id: createdOrder.id,
-            artwork_id: item.artwork.id,
-            quantity: item.quantity,
-            price_at_purchase: price,
-            line_total: lineTotal,
-          },
-        });
-
-        await tx.artwork.update({
-          where: { id: item.artwork.id },
-          data: {
-            inventory: {
-              decrement: item.quantity,
-            },
-          },
-        });
-      }
-
-      await tx.cartItem.deleteMany({
-        where: { user_id: userId },
-      });
-
-      return createdOrder;
+    const shippingDetails = normalizeShippingDetails(req.body.shippingDetails);
+    const order = await finalizeOrderFromCart({
+      userId,
+      shippingDetails,
+      paymentMethod: PAYMENT_METHOD.COD,
+      status: ORDER_STATUS.PENDING,
+      paymentStatus: PAYMENT_STATUS.PENDING,
     });
 
     return res.status(201).json({
@@ -91,7 +28,7 @@ const placeOrderCOD = async (req, res) => {
     });
   } catch (error) {
     console.error("placeOrderCOD error:", error);
-    return res.status(500).json({
+    return res.status(error.statusCode || 500).json({
       message: "Failed to place COD order",
       error: error.message,
     });
@@ -131,61 +68,23 @@ const getUserOrders = async (req, res) => {
 const createStripeCheckoutSession = async (req, res) => {
   try {
     const userId = req.user.sub;
+    const shippingDetails = normalizeShippingDetails(req.body.shippingDetails);
+    const { items } = await getValidatedCartSnapshot(userId);
 
-    const cartItems = await prisma.cartItem.findMany({
-      where: { user_id: userId },
-      include: { artwork: true },
-    });
-
-    if (!cartItems.length) {
-      return res.status(400).json({
-        message: "Cannot create payment session because cart is empty",
+    if (!process.env.FRONTEND_URL) {
+      return res.status(500).json({
+        message: "FRONTEND_URL is not configured",
       });
     }
 
-    for (const item of cartItems) {
-      if (!item.artwork) {
-        return res.status(404).json({
-          message: `Artwork not found for cart item ${item.id}`,
-        });
-      }
-
-      if (item.artwork.inventory < item.quantity) {
-        return res.status(400).json({
-          message: `Not enough stock for ${item.artwork.title}`,
-        });
-      }
-    }
-
-    const subtotal = cartItems.reduce((sum, item) => {
-      return sum + Number(item.artwork.price) * item.quantity;
-    }, 0);
-
-    const shipping = 0;
-    const tax = 0;
-    const total = subtotal + shipping + tax;
-
-    const order = await prisma.order.create({
-      data: {
-        user_id: userId,
-        subtotal,
-        shipping,
-        tax,
-        total,
-        status: "PENDING",
-        payment_method: "STRIPE",
-        payment_status: "PENDING",
-      },
-    });
-
-    const line_items = cartItems.map((item) => ({
+    const line_items = items.map((item) => ({
       price_data: {
         currency: "usd",
         product_data: {
-          name: item.artwork.title,
-          images: item.artwork.image_url ? [item.artwork.image_url] : [],
+          name: item.title,
+          images: item.imageUrl ? [item.imageUrl] : [],
         },
-        unit_amount: Math.round(Number(item.artwork.price) * 100),
+        unit_amount: Math.round(Number(item.price) * 100),
       },
       quantity: item.quantity,
     }));
@@ -196,15 +95,14 @@ const createStripeCheckoutSession = async (req, res) => {
       success_url: `${process.env.FRONTEND_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.FRONTEND_URL}/cart`,
       metadata: {
-        orderId: String(order.id),
-        userId,
-      },
-    });
-
-    await prisma.order.update({
-      where: { id: order.id },
-      data: {
-        stripe_checkout_session_id: session.id,
+        user_id: userId,
+        customer_name: shippingDetails.customerName,
+        phone_number: shippingDetails.phoneNumber,
+        address_line1: shippingDetails.addressLine1,
+        address_line2: shippingDetails.addressLine2 || "",
+        city: shippingDetails.city,
+        postal_code: shippingDetails.postalCode,
+        country: shippingDetails.country,
       },
     });
 
@@ -212,11 +110,10 @@ const createStripeCheckoutSession = async (req, res) => {
       message: "Stripe checkout session created",
       checkoutUrl: session.url,
       sessionId: session.id,
-      orderId: order.id,
     });
   } catch (error) {
     console.error("createStripeCheckoutSession error:", error);
-    return res.status(500).json({
+    return res.status(error.statusCode || 500).json({
       message: "Failed to create Stripe checkout session",
       error: error.message,
     });
@@ -241,78 +138,42 @@ const stripeWebhook = async (req, res) => {
   try {
     if (event.type === "checkout.session.completed") {
       const session = event.data.object;
-      const orderId = Number(session.metadata?.orderId);
+      const userId = session.metadata?.user_id;
 
-      const order = await prisma.order.findUnique({
-        where: { id: orderId },
-      });
-
-      if (!order) {
-        return res.status(404).send("Order not found");
+      if (!userId) {
+        throw new Error("Missing user_id in Stripe session metadata");
       }
 
-      if (order.payment_status === "PAID") {
+      const existingOrder = await findOrderByStripeSessionId(session.id);
+      if (existingOrder) {
         return res.status(200).json({ received: true });
       }
 
-      const cartItems = await prisma.cartItem.findMany({
-        where: { user_id: order.user_id },
-        include: { artwork: true },
-      });
-
-      await prisma.$transaction(async (tx) => {
-        for (const item of cartItems) {
-          if (!item.artwork) {
-            throw new Error(`Artwork not found for cart item ${item.id}`);
-          }
-
-          if (item.artwork.inventory < item.quantity) {
-            throw new Error(`Not enough stock for ${item.artwork.title}`);
-          }
-        }
-
-        for (const item of cartItems) {
-          const price = Number(item.artwork.price);
-          const lineTotal = price * item.quantity;
-
-          await tx.orderItem.create({
-            data: {
-              order_id: order.id,
-              artwork_id: item.artwork.id,
-              quantity: item.quantity,
-              price_at_purchase: price,
-              line_total: lineTotal,
-            },
-          });
-
-          await tx.artwork.update({
-            where: { id: item.artwork.id },
-            data: {
-              inventory: {
-                decrement: item.quantity,
-              },
-            },
-          });
-        }
-
-        await tx.order.update({
-          where: { id: order.id },
-          data: {
-            payment_status: "PAID",
-            status: "PLACED",
-          },
-        });
-
-        await tx.cartItem.deleteMany({
-          where: { user_id: order.user_id },
-        });
+      await finalizeOrderFromCart({
+        userId,
+        shippingDetails: {
+          customerName: session.metadata?.customer_name,
+          phoneNumber: session.metadata?.phone_number,
+          addressLine1: session.metadata?.address_line1,
+          addressLine2: session.metadata?.address_line2,
+          city: session.metadata?.city,
+          postalCode: session.metadata?.postal_code,
+          country: session.metadata?.country,
+        },
+        paymentMethod: PAYMENT_METHOD.STRIPE,
+        status: ORDER_STATUS.PAID,
+        paymentStatus: PAYMENT_STATUS.PAID,
+        stripeCheckoutSessionId: session.id,
+        stripePaymentIntentId: session.payment_intent
+          ? String(session.payment_intent)
+          : null,
       });
     }
 
     return res.status(200).json({ received: true });
   } catch (error) {
     console.error("stripeWebhook error:", error);
-    return res.status(500).json({
+    return res.status(error.statusCode || 500).json({
       message: "Webhook handling failed",
       error: error.message,
     });

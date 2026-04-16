@@ -5,13 +5,7 @@ console.log("🔥🔥 THIS IS THE REAL SERVER FILE 🔥🔥");
 dotenv.config();
 
 const app = express();
-const { stripeWebhook } = require("./controllers/orderController");
-
-app.post(
-  "/payments/stripe/webhook",
-  express.raw({ type: "application/json" }),
-  stripeWebhook
-);
+const webhookRoutes = require("./routes/webhookRoutes");
 
 // Debug middleware - logs every incoming request
 app.use((req, res, next) => {
@@ -26,6 +20,7 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
 }));
 
+app.use("/webhook", webhookRoutes);
 app.use(express.json());
 
 app.get("/", (req, res) => {

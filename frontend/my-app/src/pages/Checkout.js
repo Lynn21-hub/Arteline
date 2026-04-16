@@ -6,9 +6,54 @@ import { useNavigate } from "react-router-dom";
 function Checkout() {
   const [checkout, setCheckout] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [processing, setProcessing] = useState(false);
+  const [processingMethod, setProcessingMethod] = useState("");
   const [error, setError] = useState("");
+  const [shippingDetails, setShippingDetails] = useState({
+    customerName: "",
+    phoneNumber: "",
+    addressLine1: "",
+    addressLine2: "",
+    city: "",
+    postalCode: "",
+    country: "",
+  });
   const navigate = useNavigate();
+
+  const updateShippingField = (field) => (event) => {
+    const { value } = event.target;
+    setShippingDetails((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  };
+
+  const validateShippingDetails = () => {
+    if (!shippingDetails.customerName.trim()) {
+      return "Please enter the recipient's full name.";
+    }
+
+    if (!shippingDetails.phoneNumber.trim()) {
+      return "Please enter a phone number for delivery.";
+    }
+
+    if (!shippingDetails.addressLine1.trim()) {
+      return "Please enter the delivery address.";
+    }
+
+    if (!shippingDetails.city.trim()) {
+      return "Please enter the delivery city.";
+    }
+
+    if (!shippingDetails.postalCode.trim()) {
+      return "Please enter the postal code.";
+    }
+
+    if (!shippingDetails.country.trim()) {
+      return "Please enter the destination country.";
+    }
+
+    return "";
+  };
 
   useEffect(() => {
     const loadCheckout = async () => {
@@ -29,28 +74,39 @@ function Checkout() {
   }, []);
 
   const handleCOD = async () => {
+    const validationError = validateShippingDetails();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     try {
-      setProcessing(true);
+      setProcessingMethod("cod");
       setError("");
-      const data = await placeOrderCOD();
-      alert(data.message || "Order placed successfully");
-      navigate("/orders");
+      await placeOrderCOD(shippingDetails);
+      navigate("/order-success?method=cod");
     } catch (err) {
       console.error("COD error:", err);
       setError(err.response?.data?.message || "Failed to place COD order.");
     } finally {
-      setProcessing(false);
+      setProcessingMethod("");
     }
   };
 
   const handleStripe = async () => {
+    const validationError = validateShippingDetails();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     try {
-      setProcessing(true);
+      setProcessingMethod("stripe");
       setError("");
-      const data = await placeOrderStripe();
+      const data = await placeOrderStripe(shippingDetails);
 
       if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
+        window.location.assign(data.checkoutUrl);
         return;
       }
 
@@ -58,7 +114,7 @@ function Checkout() {
     } catch (err) {
       console.error("Stripe error:", err);
       setError(err.response?.data?.message || "Failed to start Stripe checkout.");
-      setProcessing(false);
+      setProcessingMethod("");
     }
   };
 
@@ -99,6 +155,85 @@ function Checkout() {
           </div>
 
           <div style={styles.summaryBox}>
+            <div style={styles.sectionHeader}>
+              <p style={styles.sectionKicker}>Delivery Details</p>
+              <h2 style={styles.sectionTitle}>Shipping information</h2>
+            </div>
+
+            <div style={styles.formGrid}>
+              <label style={styles.field}>
+                <span style={styles.label}>Full name</span>
+                <input
+                  style={styles.input}
+                  value={shippingDetails.customerName}
+                  onChange={updateShippingField("customerName")}
+                  placeholder="Collector name"
+                />
+              </label>
+
+              <label style={styles.field}>
+                <span style={styles.label}>Phone number</span>
+                <input
+                  style={styles.input}
+                  value={shippingDetails.phoneNumber}
+                  onChange={updateShippingField("phoneNumber")}
+                  placeholder="+961..."
+                />
+              </label>
+
+              <label style={{ ...styles.field, ...styles.fullWidth }}>
+                <span style={styles.label}>Address line 1</span>
+                <input
+                  style={styles.input}
+                  value={shippingDetails.addressLine1}
+                  onChange={updateShippingField("addressLine1")}
+                  placeholder="Street, building, floor"
+                />
+              </label>
+
+              <label style={{ ...styles.field, ...styles.fullWidth }}>
+                <span style={styles.label}>Address line 2</span>
+                <input
+                  style={styles.input}
+                  value={shippingDetails.addressLine2}
+                  onChange={updateShippingField("addressLine2")}
+                  placeholder="Apartment, suite, landmark"
+                />
+              </label>
+
+              <label style={styles.field}>
+                <span style={styles.label}>City</span>
+                <input
+                  style={styles.input}
+                  value={shippingDetails.city}
+                  onChange={updateShippingField("city")}
+                  placeholder="Beirut"
+                />
+              </label>
+
+              <label style={styles.field}>
+                <span style={styles.label}>Postal code</span>
+                <input
+                  style={styles.input}
+                  value={shippingDetails.postalCode}
+                  onChange={updateShippingField("postalCode")}
+                  placeholder="Postal code"
+                />
+              </label>
+
+              <label style={{ ...styles.field, ...styles.fullWidth }}>
+                <span style={styles.label}>Country</span>
+                <input
+                  style={styles.input}
+                  value={shippingDetails.country}
+                  onChange={updateShippingField("country")}
+                  placeholder="Lebanon"
+                />
+              </label>
+            </div>
+
+            <div style={styles.divider} />
+
             <p style={styles.text}>
               Subtotal: ${Number(checkout.subtotal || 0).toFixed(2)}
             </p>
@@ -116,17 +251,17 @@ function Checkout() {
               <button
                 style={styles.codBtn}
                 onClick={handleCOD}
-                disabled={processing}
+                disabled={Boolean(processingMethod)}
               >
-                Cash on Delivery
+                {processingMethod === "cod" ? "Processing..." : "Cash on Delivery"}
               </button>
 
               <button
                 style={styles.cardBtn}
                 onClick={handleStripe}
-                disabled={processing}
+                disabled={Boolean(processingMethod)}
               >
-                Pay by Card
+                {processingMethod === "stripe" ? "Redirecting..." : "Pay by Card"}
               </button>
             </div>
           </div>
@@ -221,6 +356,55 @@ const styles = {
     borderRadius: "20px",
     padding: "24px",
     boxShadow: "0 10px 25px rgba(0,0,0,0.06)",
+  },
+  sectionHeader: {
+    marginBottom: "18px",
+  },
+  sectionKicker: {
+    margin: "0 0 6px",
+    color: "#8b5e3c",
+    fontSize: "12px",
+    letterSpacing: "0.18em",
+    fontWeight: 700,
+    textTransform: "uppercase",
+  },
+  sectionTitle: {
+    margin: 0,
+    fontSize: "28px",
+    color: "#1f1f1f",
+    fontFamily: "'Playfair Display', serif",
+  },
+  formGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    gap: "14px",
+  },
+  field: {
+    display: "grid",
+    gap: "8px",
+  },
+  fullWidth: {
+    gridColumn: "1 / -1",
+  },
+  label: {
+    fontSize: "13px",
+    fontWeight: 600,
+    color: "#4b4035",
+  },
+  input: {
+    width: "100%",
+    borderRadius: "14px",
+    border: "1px solid rgba(31,31,31,0.12)",
+    padding: "13px 14px",
+    fontSize: "15px",
+    color: "#1f1f1f",
+    background: "#fcfbf9",
+    boxSizing: "border-box",
+  },
+  divider: {
+    height: "1px",
+    background: "rgba(31,31,31,0.08)",
+    margin: "22px 0 18px",
   },
   total: {
     marginTop: "12px",

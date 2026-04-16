@@ -13,6 +13,7 @@ import Artworks from "./pages/Artworks";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Orders from "./pages/Orders";
+import OrderSuccess from "./pages/OrderSuccess";
 import ArtworkDetails from "./pages/ArtworkDetails";
 import ArtistInventory from "./pages/ArtistInventory";
 import CreateArtwork from "./pages/CreateArtwork";
@@ -257,6 +258,8 @@ function App() {
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/orders" element={<Orders />} />
+          <Route path="/order-success" element={<OrderSuccess />} />
+          <Route path="/payment-success" element={<OrderSuccess />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/artworks/:id" element={<ArtworkDetails />} />
           <Route

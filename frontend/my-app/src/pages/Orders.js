@@ -37,6 +37,12 @@ function Orders() {
             <p style={styles.detail}>Status: {order.status}</p>
             <p style={styles.detail}>Payment Method: {order.payment_method}</p>
             <p style={styles.detail}>Payment Status: {order.payment_status}</p>
+            <p style={styles.detail}>
+              Ship To: {order.customer_name}, {order.shipping_address_line1}
+              {order.shipping_address_line2 ? `, ${order.shipping_address_line2}` : ""}
+              , {order.shipping_city}, {order.shipping_postal_code}, {order.shipping_country}
+            </p>
+            <p style={styles.detail}>Phone: {order.phone_number}</p>
             <p style={styles.total}>Total: ${Number(order.total).toFixed(2)}</p>
 
             {order.orderItems?.map((item) => (
