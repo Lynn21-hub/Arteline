@@ -1,19 +1,10 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const db = require('../db');
+const { searchArtworks } = require("../controllers/searchController");
 
-// GET /search?q=keyword
-router.get('/', (req, res) => {
-  const q = req.query.q;
-  if (!q || !q.trim()) return res.status(400).json({ error: 'Query is required' });
+console.log("🔥 SEARCH ROUTE LOADED");
 
-  const sql = `SELECT * FROM artwork
-               WHERE title LIKE ? OR description LIKE ? OR tags LIKE ?`;
-  const param = `%${q}%`;
-  db.all(sql, [param, param, param], (err, rows) => {
-    if (err) return res.status(500).json({ error: 'Search failed' });
-    res.json(rows);
-  });
-});
+// REAL SEARCH ROUTE
+router.get("/", searchArtworks);
 
 module.exports = router;

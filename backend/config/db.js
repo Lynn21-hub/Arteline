@@ -34,6 +34,7 @@ connection.connect((err) => {
       console.log('Test query result:', results);
     }
 
-    connection.end();
+   
   });
 });
+module.exports = connection;

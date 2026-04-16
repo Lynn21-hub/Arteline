@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import ArtworkCard from "../components/ArtworkCard";
 import { getAllArtworks } from "../api/artworkAPI";
-
+import { searchArtworks } from "../api/searchAPI";
 const CATEGORIES = ["All", "Painting", "Portrait", "Sculpture", "Calligraphy", "Drawing"];
 
 function Artworks() {
@@ -11,7 +11,7 @@ function Artworks() {
   const [sort, setSort] = useState("default");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
+  const [results, setResults] = useState([]);
   useEffect(() => {
     const fetchArtworks = async () => {
       try {
@@ -29,20 +29,36 @@ function Artworks() {
 
     fetchArtworks();
   }, []);
+useEffect(() => {
+    const delay = setTimeout(async () => {
+      try {
+        if (search.trim() === "") {
+          setResults([]);
+          return;
+        }
 
-  const filtered = artworks
+        const data = await searchArtworks(search);
+        setResults(data);
+      } catch (err) {
+        console.error("Search error:", err);
+      }
+    }, 400);
+
+    return () => clearTimeout(delay);
+  }, [search]);
+
+  // decide what to display
+  const baseData = search ? results : artworks;
+
+  const filtered = baseData
     .filter((a) => activeCategory === "All" || a.category === activeCategory)
-    .filter(
-      (a) =>
-        a.title?.toLowerCase().includes(search.toLowerCase()) ||
-        a.artist_name?.toLowerCase().includes(search.toLowerCase())
-    )
     .sort((a, b) => {
       if (sort === "price-asc") return Number(a.price) - Number(b.price);
       if (sort === "price-desc") return Number(b.price) - Number(a.price);
       if (sort === "name") return a.title.localeCompare(b.title);
       return 0;
     });
+
 
   return (
     <>

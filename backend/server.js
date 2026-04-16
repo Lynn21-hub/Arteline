@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
-
+console.log("🔥🔥 THIS IS THE REAL SERVER FILE 🔥🔥");
 dotenv.config();
 
 const app = express();
@@ -31,11 +31,11 @@ app.use(express.json());
 app.get("/", (req, res) => {
   res.send("Backend is running");
 });
-
+const searchRoutes = require("./routes/search");
 const cartRoutes = require("./routes/cartRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const artworkRoutes = require("./routes/artworkRoutes");
-
+app.use("/api/search", searchRoutes);
 app.use("/cart", cartRoutes);
 app.use("/order", orderRoutes);
 app.use("/api/artworks", artworkRoutes);
