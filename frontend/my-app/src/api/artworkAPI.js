@@ -11,13 +11,21 @@ const parseResponse = async (res) => {
   return data;
 };
 
-const getAuthHeaders = async () => {
+const getAuthToken = async () => {
   const session = await fetchAuthSession();
-  const token = session.tokens?.accessToken?.toString();
+  const token =
+    session.tokens?.idToken?.toString() ||
+    session.tokens?.accessToken?.toString();
 
   if (!token) {
     throw new Error("Missing auth token");
   }
+
+  return token;
+};
+
+const getAuthHeaders = async () => {
+  const token = await getAuthToken();
 
   return {
     "Content-Type": "application/json",
@@ -62,8 +70,7 @@ export async function deleteArtwork(id) {
 }
 
 export const createArtwork = async (data) => {
-  const session = await fetchAuthSession();
-  const token = session.tokens?.accessToken?.toString();
+  const token = await getAuthToken();
 
   const res = await fetch(BASE_URL, {
     method: "POST",

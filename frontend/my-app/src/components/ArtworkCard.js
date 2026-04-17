@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { addToCart } from "../api/cartAPI";
 import { useNavigate } from "react-router-dom";
+import { getCurrentUser } from "aws-amplify/auth";
 
 function ArtworkCard({ artwork }) {
   const [status, setStatus] = useState("idle");
@@ -10,6 +11,14 @@ function ArtworkCard({ artwork }) {
   const handleAddToCart = async (e) => {
     e.stopPropagation();
     if (isOutOfStock) return;
+
+    try {
+      await getCurrentUser();
+    } catch {
+      navigate("/signup");
+      return;
+    }
+
     setStatus("loading");
 
     try {

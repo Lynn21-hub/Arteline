@@ -38,6 +38,7 @@ model Artwork {
 
   cartItems   CartItem[]
   orderItems OrderItem[]
+  interactions UserInteraction[]
 
   @@index([creator_sub])
   @@map("artworks")
@@ -80,6 +81,61 @@ model OrderItem {
 
   order             Order     @relation(fields: [order_id], references: [id])
   artwork           Artwork   @relation(fields: [artwork_id], references: [id])
+  payouts           ArtistPayout[]
 
   @@map("order_items")
+}
+
+model ArtistPayout {
+  id                 Int       @id @default(autoincrement())
+  artist_sub         String    @db.VarChar(191)
+  order_item_id      Int
+  gross_amount       Decimal   @db.Decimal(10, 2)
+  platform_fee       Decimal   @db.Decimal(10, 2)
+  artist_amount      Decimal   @db.Decimal(10, 2)
+  status             String    @default("PENDING") @db.VarChar(20)
+  payment_reference  String?   @db.VarChar(255)
+  created_at         DateTime? @default(now()) @db.Timestamp(0)
+  paid_at            DateTime? @db.Timestamp(0)
+
+  orderItem          OrderItem @relation(fields: [order_item_id], references: [id])
+
+  @@index([artist_sub])
+  @@index([status])
+  @@map("artist_payouts")
+}
+
+model UserInteraction {
+  id         Int       @id @default(autoincrement())
+  user_id    String    @db.VarChar(191)
+  artwork_id Int
+  type       String    @db.VarChar(50)
+  created_at DateTime  @default(now())
+
+  artwork    Artwork   @relation(fields: [artwork_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, artwork_id, type])
+  @@index([user_id])
+  @@index([artwork_id])
+  @@index([type])
+  @@map("user_interactions")
+}
+
+model ArtistProfile {
+  id          Int       @id @default(autoincrement())
+  creator_sub String    @unique @db.VarChar(191)
+  display_name String   @db.VarChar(255)
+  bio         String    @db.Text
+  avatar_url  String?   @db.Text
+  location    String?   @db.VarChar(255)
+  website     String?   @db.VarChar(255)
+  instagram   String?   @db.VarChar(255)
+  is_published Boolean  @default(true)
+  is_featured Boolean   @default(false)
+  created_at  DateTime? @default(now()) @db.Timestamp(0)
+  updated_at  DateTime? @default(now()) @updatedAt @db.Timestamp(0)
+
+  @@index([is_published])
+  @@index([is_featured])
+  @@map("artist_profiles")
 }

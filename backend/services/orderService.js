@@ -16,6 +16,8 @@ const PAYMENT_STATUS = {
   PAID: "PAID",
 };
 
+const PLATFORM_FEE_RATE = 0.1;
+
 const SHIPPING_AMOUNT = 0;
 const TAX_AMOUNT = 0;
 
@@ -181,7 +183,7 @@ const finalizeOrderFromCart = async ({
       const price = Number(item.artwork.price);
       const lineTotal = price * item.quantity;
 
-      await tx.orderItem.create({
+      const orderItem = await tx.orderItem.create({
         data: {
           order_id: order.id,
           artwork_id: item.artwork.id,
@@ -190,6 +192,42 @@ const finalizeOrderFromCart = async ({
           line_total: lineTotal,
         },
       });
+
+      const grossAmount = Number(lineTotal.toFixed(2));
+      const platformFee = Number((grossAmount * PLATFORM_FEE_RATE).toFixed(2));
+      const artistAmount = Number((grossAmount - platformFee).toFixed(2));
+
+      // Record purchase interaction for recommendations
+      await tx.userInteraction.upsert({
+        where: {
+          user_id_artwork_id_type: {
+            user_id: userId,
+            artwork_id: item.artwork.id,
+            type: "purchase",
+          },
+        },
+        update: {
+          created_at: new Date(),
+        },
+        create: {
+          user_id: userId,
+          artwork_id: item.artwork.id,
+          type: "purchase",
+        },
+      });
+
+      if (item.artwork.creator_sub) {
+        await tx.artistPayout.create({
+          data: {
+            artist_sub: item.artwork.creator_sub,
+            order_item_id: orderItem.id,
+            gross_amount: grossAmount,
+            platform_fee: platformFee,
+            artist_amount: artistAmount,
+            status: "PENDING",
+          },
+        });
+      }
     }
 
     await tx.cartItem.deleteMany({

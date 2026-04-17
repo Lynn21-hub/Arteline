@@ -33,87 +33,112 @@ const weights = {
 // ----------------------
 // route
 // ----------------------
-router.get("/:userId", async (req, res) => {
+router.get("/:userId", (req, res) => {
   const { userId } = req.params;
 
-  try {
-    const [interactions] = await db.query(
-      "SELECT * FROM user_interactions WHERE user_id = ?",
-      [userId]
-    );
-
-    const [artworks] = await db.query("SELECT * FROM artworks");
-
-    if (!artworks.length) {
-      return res.json({ recommendations: [] });
-    }
-
-    const hasHistory = interactions.length > 0;
-
-    // ----------------------
-    // map for speed
-    // ----------------------
-    const artworkMap = new Map(artworks.map(a => [a.id, a]));
-
-    // ----------------------
-    // build user vector
-    // ----------------------
-    let userVector = null;
-
-    if (hasHistory) {
-      const dim = JSON.parse(artworks[0].embedding).length;
-      userVector = new Array(dim).fill(0);
-
-      for (const inter of interactions) {
-        const artwork = artworkMap.get(inter.artwork_id);
-        if (!artwork || !artwork.embedding) continue;
-
-        const embedding = JSON.parse(artwork.embedding);
-        const weight = weights[inter.type] || 1;
-
-        for (let i = 0; i < dim; i++) {
-          userVector[i] += embedding[i] * weight;
+  // Query 1: Get user interactions
+  db.query(
+    "SELECT * FROM user_interactions WHERE user_id = ?",
+    [userId],
+    (err, interactions) => {
+      if (err) {
+        // If table doesn't exist, return empty recommendations
+        if (err.code === "ER_NO_SUCH_TABLE") {
+          return res.json({ recommendations: [] });
         }
+        console.error("Recommendation error:", err);
+        return res.status(500).json({ error: "Recommendation error" });
       }
-    }
 
-    // ----------------------
-    // scoring
-    // ----------------------
-    let recommendations = artworks
-      .filter(a => !interactions.some(i => i.artwork_id === a.id))
-      .map(a => {
-        if (!a.embedding) return { ...a, score: 0 };
+      // Query 2: Get all artworks
+      db.query("SELECT * FROM artworks", (err2, artworks) => {
+        if (err2) {
+          console.error("Artworks query error:", err2);
+          return res.status(500).json({ error: "Artworks query error" });
+        }
 
-        const embedding = JSON.parse(a.embedding);
+        if (!artworks || artworks.length === 0) {
+          return res.json({ recommendations: [] });
+        }
 
-        const score = hasHistory
-          ? cosineSimilarity(userVector, embedding)
-          : 0;
+        const hasHistory = interactions && interactions.length > 0;
 
-        return { ...a, score };
+        // ----------------------
+        // map for speed
+        // ----------------------
+        const artworkMap = new Map(artworks.map(a => [a.id, a]));
+
+        // ----------------------
+        // build user vector
+        // ----------------------
+        let userVector = null;
+
+        if (hasHistory) {
+          // Get embedding length from first artwork (assuming all have same dimension)
+          const firstEmbedding = artworks.find(a => a.embedding);
+          if (!firstEmbedding) {
+            // If no embeddings exist, return random recommendations
+            const recs = artworks
+              .sort(() => Math.random() - 0.5)
+              .slice(0, 5);
+            return res.json({ recommendations: recs });
+          }
+
+          const dim = JSON.parse(firstEmbedding.embedding).length;
+          userVector = new Array(dim).fill(0);
+
+          for (const inter of interactions) {
+            const artwork = artworkMap.get(inter.artwork_id);
+            if (!artwork || !artwork.embedding) continue;
+
+            const embedding = JSON.parse(artwork.embedding);
+            const weight = weights[inter.type] || 1;
+
+            for (let i = 0; i < dim; i++) {
+              userVector[i] += embedding[i] * weight;
+            }
+          }
+        }
+
+        // ----------------------
+        // scoring
+        // ----------------------
+        let recommendations = artworks
+          .filter(a => !interactions || !interactions.some(i => i.artwork_id === a.id))
+          .map(a => {
+            if (!a.embedding) return { ...a, score: 0 };
+
+            try {
+              const embedding = JSON.parse(a.embedding);
+
+              const score = hasHistory
+                ? cosineSimilarity(userVector, embedding)
+                : 0;
+
+              return { ...a, score };
+            } catch (parseErr) {
+              return { ...a, score: 0 };
+            }
+          });
+
+        // ----------------------
+        // fallback for cold start
+        // ----------------------
+        if (!hasHistory) {
+          recommendations = recommendations.sort(() => Math.random() - 0.5);
+        }
+
+        // ----------------------
+        // final ranking
+        // ----------------------
+        recommendations = recommendations
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 5);
+
+        res.json({ recommendations });
       });
-
-    // ----------------------
-    // fallback for cold start
-    // ----------------------
-    if (!hasHistory) {
-      recommendations = recommendations.sort(() => Math.random() - 0.5);
     }
-
-    // ----------------------
-    // final ranking
-    // ----------------------
-    recommendations = recommendations
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 5);
-
-    res.json({ recommendations });
-
-  } catch (err) {
-    console.error("Recommendation error:", err);
-    res.status(500).json({ error: "Recommendation error" });
-  }
+  );
 });
 
 module.exports = router;

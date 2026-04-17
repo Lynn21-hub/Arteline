@@ -2,6 +2,30 @@ const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
 
+const recordUserInteraction = async (userId, artworkId, type, db = prisma) => {
+  try {
+    await db.userInteraction.upsert({
+      where: {
+        user_id_artwork_id_type: {
+          user_id: userId,
+          artwork_id: artworkId,
+          type,
+        },
+      },
+      update: {
+        created_at: new Date(),
+      },
+      create: {
+        user_id: userId,
+        artwork_id: artworkId,
+        type,
+      },
+    });
+  } catch (err) {
+    console.error(`Error recording ${type} interaction:`, err);
+  }
+};
+
 const addToCart = async (req, res) => {
   try {
     const userId = req.user.sub;
@@ -74,6 +98,9 @@ const addToCart = async (req, res) => {
         message: `Only ${artwork.inventory} item(s) available in stock`,
       });
     }
+
+    // Record user interaction for recommendations
+    await recordUserInteraction(userId, artId, "cart");
 
     const newItem = await prisma.cartItem.create({
       data: {

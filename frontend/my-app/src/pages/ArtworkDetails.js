@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { getArtworkById } from "../api/artworkAPI";
 import { addToCart } from "../api/cartAPI";
+import { getCurrentUser } from "aws-amplify/auth";
 
 function ArtworkDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [artwork, setArtwork] = useState(null);
   const [loading, setLoading] = useState(true);
   const [cartStatus, setCartStatus] = useState("idle");
@@ -28,6 +30,13 @@ function ArtworkDetails() {
 
   const handleAddToCart = async () => {
     if (!artwork || artwork.inventory <= 0) return;
+
+    try {
+      await getCurrentUser();
+    } catch {
+      navigate("/signup");
+      return;
+    }
 
     try {
       setCartStatus("loading");

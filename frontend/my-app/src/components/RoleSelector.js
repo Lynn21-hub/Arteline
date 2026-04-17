@@ -1,76 +1,104 @@
 import React from 'react';
 
 function RoleSelector({ onSelectRole }) {
+  const artelineColors = {
+    parchment: "#f7f3ed",
+    ink: "#0d0c0a",
+    gold: "#c9a84c",
+    border: "rgba(13,12,10,0.09)",
+  };
+
   return (
-    <div style={styles.overlay}>
-      <div style={styles.container}>
+    <div style={styles.overlay(artelineColors)}>
+      <div style={styles.container(artelineColors)}>
         {/* CLOSE BUTTON */}
-        <button onClick={() => window.location.reload()} style={styles.close}>×</button>
+        <button 
+          onClick={() => window.location.reload()} 
+          style={styles.close(artelineColors)}
+          aria-label="Close"
+        >
+          ✕
+        </button>
 
         {/* HEADER */}
         <div style={styles.header}>
-          <h1 style={styles.mainTitle}>Welcome to Artéline</h1>
-          <p style={styles.subtitle}>Choose how you'd like to explore our community</p>
+          <h1 style={styles.mainTitle(artelineColors)}>
+            Arté<span style={{ color: artelineColors.gold, fontStyle: "italic" }}>line</span>
+          </h1>
+          <p style={styles.subtitle(artelineColors)}>
+            Choose your role
+          </p>
+          <p style={styles.description(artelineColors)}>
+            Explore our art community as a collector or artist
+          </p>
         </div>
 
         <div style={styles.content}>
-          {/* LEFT CARD - COLLECTOR */}
+          {/* COLLECTOR CARD */}
           <div 
-            style={styles.card}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-8px)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+            style={styles.card(artelineColors)}
+            onClick={() => onSelectRole('collector')}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = artelineColors.gold;
+              e.currentTarget.style.boxShadow = `0 8px 24px ${artelineColors.gold}20`;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = artelineColors.border;
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(13,12,10,0.06)';
+            }}
           >
-            <div style={styles.iconContainer}>
-              <svg style={styles.icon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
-            </div>
-            
-            <h2 style={styles.cardTitle}>Collector</h2>
-            <p style={styles.cardDescription}>
-              Discover, collect, and connect with exceptional artworks from talented artists worldwide.
+            <h2 style={styles.cardTitle(artelineColors)}>Collector</h2>
+            <p style={styles.cardDescription(artelineColors)}>
+              Discover and connect with exceptional artworks from talented creators around the world.
             </p>
             
             <button
               onClick={() => onSelectRole('collector')}
-              style={styles.primaryButton}
-              onMouseEnter={(e) => e.target.style.background = '#0041A4'}
-              onMouseLeave={(e) => e.target.style.background = '#0052CC'}
+              style={styles.button(artelineColors, 'primary')}
+              onMouseEnter={(e) => {
+                e.target.style.background = artelineColors.gold;
+                e.target.style.color = artelineColors.parchment;
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'transparent';
+                e.target.style.color = artelineColors.gold;
+              }}
             >
-              Enter as Collector
+              Continue as Collector
             </button>
           </div>
 
-          {/* DIVIDER */}
-          <div style={styles.divider}></div>
-
-          {/* RIGHT CARD - ARTIST */}
+          {/* ARTIST CARD */}
           <div 
-            style={styles.card}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-8px)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+            style={styles.card(artelineColors)}
+            onClick={() => onSelectRole('artist')}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = artelineColors.gold;
+              e.currentTarget.style.boxShadow = `0 8px 24px ${artelineColors.gold}20`;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = artelineColors.border;
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(13,12,10,0.06)';
+            }}
           >
-            <div style={styles.iconContainer}>
-              <svg style={styles.icon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 2L2 7L2 12C2 16.4 6 20 12 20C18 20 22 16.4 22 12L22 7L12 2Z"></path>
-                <path d="M12 9V15"></path>
-                <path d="M9 12H15"></path>
-              </svg>
-            </div>
-            
-            <h2 style={styles.cardTitle}>Artist</h2>
-            <p style={styles.cardDescription}>
-              Showcase your talent, build your audience, and turn your passion into opportunity.
+            <h2 style={styles.cardTitle(artelineColors)}>Artist</h2>
+            <p style={styles.cardDescription(artelineColors)}>
+              Showcase your talent, build your audience, and bring your artistic vision to life.
             </p>
             
             <button
               onClick={() => onSelectRole('artist')}
-              style={{...styles.primaryButton, background: '#FF6B35'}}
-              onMouseEnter={(e) => e.target.style.background = '#E55A2B'}
-              onMouseLeave={(e) => e.target.style.background = '#FF6B35'}
+              style={styles.button(artelineColors, 'primary')}
+              onMouseEnter={(e) => {
+                e.target.style.background = artelineColors.gold;
+                e.target.style.color = artelineColors.parchment;
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'transparent';
+                e.target.style.color = artelineColors.gold;
+              }}
             >
-              Apply as Artist
+              Continue as Artist
             </button>
           </div>
         </div>
@@ -80,123 +108,121 @@ function RoleSelector({ onSelectRole }) {
 }
 
 const styles = {
-  overlay: {
+  overlay: (colors) => ({
     position: 'fixed',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+    background: colors.parchment,
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1000,
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", sans-serif',
-  },
-  container: {
+    fontFamily: "'Outfit', 'Poppins', Arial, sans-serif",
+  }),
+  container: (colors) => ({
     position: 'relative',
-    background: 'white',
-    borderRadius: '20px',
-    padding: '60px 40px',
-    maxWidth: '1000px',
+    background: colors.parchment,
+    borderRadius: '12px',
+    padding: '60px 50px',
+    maxWidth: '960px',
     width: '90%',
     maxHeight: '90vh',
     overflow: 'auto',
-    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
-  },
-  close: {
+    boxShadow: '0 12px 40px rgba(13,12,10,0.08)',
+    border: `1px solid ${colors.border}`,
+  }),
+  close: (colors) => ({
     position: 'absolute',
     top: '24px',
     right: '24px',
-    background: '#f0f0f0',
-    border: 'none',
-    fontSize: '28px',
+    background: 'transparent',
+    border: `1px solid ${colors.border}`,
+    fontSize: '20px',
     cursor: 'pointer',
-    color: '#333',
-    width: '40px',
-    height: '40px',
-    borderRadius: '50%',
+    color: colors.ink,
+    width: '36px',
+    height: '36px',
+    borderRadius: '8px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    transition: 'all 0.2s',
-  },
+    transition: 'all 0.2s ease',
+    padding: 0,
+    opacity: 0.6,
+  }),
   header: {
     textAlign: 'center',
     marginBottom: '50px',
   },
-  mainTitle: {
-    fontSize: '32px',
+  mainTitle: (colors) => ({
+    fontSize: '42px',
     fontWeight: '700',
-    color: '#1a1a1a',
-    margin: '0 0 12px',
+    color: colors.ink,
+    margin: '0 0 8px',
     letterSpacing: '-0.5px',
-  },
-  subtitle: {
-    fontSize: '16px',
-    color: '#666',
+    fontFamily: "'Playfair Display', serif",
+  }),
+  subtitle: (colors) => ({
+    fontSize: '18px',
+    fontWeight: '500',
+    color: colors.ink,
+    margin: '0 0 12px',
+    fontFamily: "'Playfair Display', serif",
+    fontStyle: 'italic',
+  }),
+  description: (colors) => ({
+    fontSize: '14px',
+    color: colors.ink,
+    opacity: 0.65,
     margin: 0,
-  },
+    letterSpacing: '0.5px',
+  }),
   content: {
-    display: 'flex',
-    gap: '50px',
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+    gap: '32px',
     justifyContent: 'center',
-    alignItems: 'stretch',
   },
-  card: {
-    flex: 1,
-    maxWidth: '380px',
-    padding: '40px 30px',
-    background: '#fafafa',
-    borderRadius: '16px',
-    border: '1px solid #e8e8e8',
+  card: (colors) => ({
+    padding: '42px 32px',
+    background: 'transparent',
+    borderRadius: '8px',
+    border: `1px solid ${colors.border}`,
     textAlign: 'center',
-    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+    transition: 'all 0.3s ease',
     cursor: 'pointer',
-  },
-  iconContainer: {
-    width: '80px',
-    height: '80px',
-    margin: '0 auto 24px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: '16px',
-  },
-  icon: {
-    width: '48px',
-    height: '48px',
-    color: '#0052CC',
-  },
-  cardTitle: {
+    boxShadow: '0 2px 8px rgba(13,12,10,0.06)',
+  }),
+  cardTitle: (colors) => ({
     fontSize: '24px',
     fontWeight: '600',
-    color: '#1a1a1a',
+    color: colors.ink,
     margin: '0 0 12px',
-  },
-  cardDescription: {
-    fontSize: '15px',
-    color: '#666',
+    fontFamily: "'Playfair Display', serif",
+  }),
+  cardDescription: (colors) => ({
+    fontSize: '14px',
+    color: colors.ink,
+    opacity: 0.68,
     lineHeight: '1.6',
-    margin: '0 0 32px',
-  },
-  primaryButton: {
+    margin: '0 0 28px',
+  }),
+  button: (colors, variant) => ({
     width: '100%',
-    padding: '14px',
-    background: '#0052CC',
-    color: 'white',
-    border: 'none',
-    borderRadius: '10px',
-    fontSize: '15px',
-    fontWeight: '600',
+    padding: '12px 16px',
+    background: 'transparent',
+    color: colors.gold,
+    border: `1.5px solid ${colors.gold}`,
+    borderRadius: '6px',
+    fontSize: '14px',
+    fontWeight: '500',
     cursor: 'pointer',
-    transition: 'all 0.2s',
-  },
-  divider: {
-    width: '1px',
-    background: '#e0e0e0',
-    margin: '20px 0',
-  },
+    transition: 'all 0.2s ease',
+    letterSpacing: '0.3px',
+    textTransform: 'uppercase',
+  }),
 };
 
 export default RoleSelector;

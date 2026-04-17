@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAllArtworks } from "../api/artworkAPI";
+import { getFeaturedArtists } from "../api/artistAPI";
 
 /* ─── Category images (Unsplash) ─── */
 const CATEGORY_IMAGES = {
@@ -54,6 +55,7 @@ export default function Home() {
   const navigate = useNavigate();
 
   const [artworks, setArtworks] = useState([]);
+  const [artists, setArtists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
@@ -76,11 +78,16 @@ export default function Home() {
   useEffect(() => {
     (async () => {
       try {
-        const data = await getAllArtworks();
-        setArtworks(data || []);
+        const [artworksData, artistsData] = await Promise.all([
+          getAllArtworks(),
+          getFeaturedArtists(),
+        ]);
+        setArtworks(artworksData || []);
+        setArtists(artistsData || []);
       } catch (err) {
         console.error("Error fetching artworks:", err);
         setArtworks([]);
+        setArtists([]);
       } finally {
         setLoading(false);
       }
@@ -97,24 +104,7 @@ export default function Home() {
 
   const featuredArtworks = useMemo(() => artworks.slice(0, 4), [artworks]);
 
-  const featuredArtists = useMemo(() => {
-    const unique = [];
-    const seen = new Set();
-
-    for (const art of artworks) {
-      const a = art.artist_name?.trim();
-      if (a && !seen.has(a)) {
-        seen.add(a);
-        unique.push({
-          name: a,
-          count: artworks.filter((x) => x.artist_name?.trim() === a).length,
-        });
-      }
-      if (unique.length === 4) break;
-    }
-
-    return unique;
-  }, [artworks]);
+  const featuredArtists = useMemo(() => artists.slice(0, 4), [artists]);
 
   const totalArtists = useMemo(
     () => new Set(artworks.map((a) => a.artist_name).filter(Boolean)).size,
@@ -407,17 +397,22 @@ export default function Home() {
           <div style={s.artistGrid}>
             {featuredArtists.map((artist, idx) => (
               <div
-                key={artist.name}
+                key={artist.creatorSub || artist.name}
                 className={`al-artist-card al-reveal al-delay-${idx}`}
                 style={s.artistCard}
-                onClick={() => navigate(`/artworks?search=${encodeURIComponent(artist.name)}`)}
+                onClick={() => navigate(`/artworks?search=${encodeURIComponent(artist.displayName || artist.name)}`)}
               >
-                <div style={s.artistAvatar}>
-                  {artist.name.charAt(0).toUpperCase()}
-                </div>
-                <p style={s.artistName}>{artist.name}</p>
-                <p style={s.artistRole}>Featured Artist</p>
-                <p style={s.artistCount}>{artist.count} work{artist.count !== 1 ? "s" : ""}</p>
+                {artist.avatarUrl ? (
+                  <img src={artist.avatarUrl} alt={artist.displayName || artist.name} style={s.artistAvatarImg} />
+                ) : (
+                  <div style={s.artistAvatar}>
+                    {(artist.displayName || artist.name || "A").charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <p style={s.artistName}>{artist.displayName || artist.name}</p>
+                <p style={s.artistRole}>{artist.location || "Featured Artist"}</p>
+                <p style={s.artistCount}>{artist.artworksCount || artist.count || 0} work{(artist.artworksCount || artist.count || 0) !== 1 ? "s" : ""}</p>
+                {artist.bio && <p style={s.artistBio}>{artist.bio}</p>}
               </div>
             ))}
           </div>
@@ -648,9 +643,11 @@ const s = {
   artistGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px,1fr))", gap: 20 },
   artistCard: { background: C.white, borderRadius: 3, padding: "36px 24px", textAlign: "center", border: `1px solid ${C.border}`, cursor: "pointer", transition: "border-color 0.3s, transform 0.3s", boxShadow: "0 2px 12px rgba(0,0,0,0.04)" },
   artistAvatar: { width: 72, height: 72, borderRadius: "50%", background: "#ede6db", color: C.gold, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, fontWeight: 700, margin: "0 auto 16px", fontFamily: "'Playfair Display', serif" },
+  artistAvatarImg: { width: 72, height: 72, borderRadius: "50%", objectFit: "cover", display: "block", margin: "0 auto 16px" },
   artistName: { fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 500, color: C.ink, margin: "0 0 6px" },
   artistRole: { fontSize: 13, color: C.muted, margin: 0 },
   artistCount: { fontSize: 12, color: C.gold, marginTop: 8, fontWeight: 500 },
+  artistBio: { fontSize: 12, color: C.muted, marginTop: 10, lineHeight: 1.6 },
 
   whyStrip: { background: C.white, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}`, display: "grid", gridTemplateColumns: "repeat(4,1fr)", padding: "48px 56px", gap: 0 },
   whyItem: { display: "flex", gap: 16, alignItems: "flex-start", padding: "0 32px 0 0" },

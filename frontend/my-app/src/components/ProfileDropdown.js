@@ -7,7 +7,7 @@ function ProfileDropdown({ onLogout }) {
       await signOut({ global: true });
 
       console.log("User fully signed out");
-      localStorage.removeItem("userRole");
+      localStorage.removeItem("selectedRole");
 
       if (onLogout) {
         onLogout();

@@ -2,19 +2,20 @@ import React, { useState } from 'react';
 import { signIn, signUp } from 'aws-amplify/auth';
 import ConfirmSignup from './ConfirmSignup';
 
-function AuthForm({ onLoginSuccess, userRole }) {
+function AuthForm({ onLoginSuccess, userRole, defaultToSignup = false }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [isSignup, setIsSignup] = useState(false);
+  const [isSignup, setIsSignup] = useState(defaultToSignup);
   const [showConfirm, setShowConfirm] = useState(false);
+  const adminMode = userRole === 'admin';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
     try {
-      if (isSignup) {
+      if (isSignup && !adminMode) {
         await signUp({
           username: email,
           password,
@@ -55,12 +56,14 @@ function AuthForm({ onLoginSuccess, userRole }) {
         
         {/* TITLE */}
         <h2 style={styles.title}>
-          {isSignup ? "Create Account" : "Welcome back"}
+          {adminMode ? "Admin sign in" : isSignup ? "Create Account" : "Welcome back"}
         </h2>
 
         {/* SUBTITLE */}
         <p style={styles.subtitle}>
-          {isSignup
+          {adminMode
+            ? "Sign in with your admin account to manage artworks."
+            : isSignup
             ? "Create your account to explore and collect art"
             : "Log in to continue your journey"}
         </p>
@@ -89,16 +92,17 @@ function AuthForm({ onLoginSuccess, userRole }) {
 
         {/* BUTTON */}
         <button type="submit" style={styles.button}>
-          {isSignup ? "Sign Up" : "Log In"}
+          {adminMode ? "Log In as Admin" : isSignup ? "Sign Up" : "Log In"}
         </button>
 
-        {/* TOGGLE */}
-        <p style={styles.toggle}>
-          {isSignup ? "Already have an account?" : "Don't have an account?"}
-          <span onClick={() => setIsSignup(!isSignup)} style={styles.link}>
-            {isSignup ? " Log in" : " Sign up"}
-          </span>
-        </p>
+        {!adminMode && (
+          <p style={styles.toggle}>
+            {isSignup ? "Already have an account?" : "Don't have an account?"}
+            <span onClick={() => setIsSignup(!isSignup)} style={styles.link}>
+              {isSignup ? " Log in" : " Sign up"}
+            </span>
+          </p>
+        )}
 
       </form>
     </div>

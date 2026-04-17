@@ -1,7 +1,7 @@
 import "./App.css";
 import React, { useState, useEffect } from "react";
 import { Amplify } from "aws-amplify";
-import { getCurrentUser } from "aws-amplify/auth";
+import { fetchAuthSession, fetchUserAttributes, getCurrentUser } from "aws-amplify/auth";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 
 import RoleSelector from "./components/RoleSelector";
@@ -18,6 +18,14 @@ import ArtworkDetails from "./pages/ArtworkDetails";
 import ArtistInventory from "./pages/ArtistInventory";
 import CreateArtwork from "./pages/CreateArtwork";
 import EditArtwork from "./pages/EditArtwork";
+import AdminArtworks from "./pages/AdminArtworks";
+import AdminLogin from "./pages/AdminLogin";
+import Login from "./pages/Login";
+import ArtistProfile from "./pages/ArtistProfile";
+import ArtistSales from "./pages/ArtistSales";
+import ArtistPayouts from "./pages/ArtistPayouts";
+import AdminPayouts from "./pages/AdminPayouts";
+import { getMyArtistProfile } from "./api/artistAPI";
 
 Amplify.configure({
   Auth: {
@@ -78,22 +86,78 @@ function App() {
   const [showModal, setShowModal] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [userRole, setUserRole] = useState(() => {
-    return localStorage.getItem("userRole") || null;
-  });
+  const [userRole, setUserRole] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  const [showRoleSelector, setShowRoleSelector] = useState(!userRole);
+  const [showRoleSelector, setShowRoleSelector] = useState(false);
+
+  // Check if current user is admin by calling backend
+  const checkAdminStatus = async () => {
+    try {
+      const session = await fetchAuthSession();
+      const idToken = session.tokens?.idToken?.toString();
+      
+      if (!idToken) {
+        setIsAdmin(false);
+        return;
+      }
+      
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || "http://localhost:5001"}/api/auth/is-admin`, {
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Admin check response:", data);
+        setIsAdmin(data.isAdmin);
+      } else {
+        console.warn("Admin check failed with status:", response.status);
+        setIsAdmin(false);
+      }
+    } catch (error) {
+      console.error("Error checking admin status:", error);
+      setIsAdmin(false);
+    }
+  };
+
+  const syncAuthenticatedRole = async () => {
+    const attributes = await fetchUserAttributes();
+    const selectedRole = localStorage.getItem("selectedRole");
+    const attributeRole = attributes["custom:userRole"];
+    const resolvedRole = selectedRole || attributeRole || "collector";
+
+    setUserRole(resolvedRole);
+
+    if (!selectedRole && attributeRole) {
+      localStorage.setItem("selectedRole", attributeRole);
+    }
+
+    setShowRoleSelector(false);
+    
+    // Check if user is admin
+    await checkAdminStatus();
+  };
 
   const checkUser = async () => {
     try {
       await getCurrentUser();
       setIsAuthenticated(true);
+      await syncAuthenticatedRole();
     } catch {
       setIsAuthenticated(false);
+      const storedRole = localStorage.getItem("selectedRole");
+      setUserRole(storedRole);
+      setShowRoleSelector(false);
+      setIsAdmin(false);
+    } finally {
+      setAuthChecked(true);
     }
   };
 
@@ -101,23 +165,52 @@ function App() {
     checkUser();
   }, []);
 
+  useEffect(() => {
+    const ensureArtistProfile = async () => {
+      if (!isAuthenticated || userRole !== "artist") {
+        return;
+      }
+
+      if (location.pathname === "/artist/profile") {
+        return;
+      }
+
+      try {
+        const profile = await getMyArtistProfile();
+        const isComplete = Boolean(profile?.displayName?.trim() && profile?.bio?.trim());
+
+        if (!isComplete) {
+          navigate("/artist/profile", { replace: true });
+        }
+      } catch (error) {
+        if (error?.response?.status === 404) {
+          navigate("/artist/profile", { replace: true });
+        }
+      }
+    };
+
+    ensureArtistProfile();
+  }, [isAuthenticated, userRole, location.pathname, navigate]);
+
   const handleLoginSuccess = async () => {
     await checkUser();
     setShowModal(false);
   };
 
   const handleSelectRole = (role) => {
-    localStorage.setItem("userRole", role);
+    localStorage.setItem("selectedRole", role);
     setUserRole(role);
     setShowRoleSelector(false);
+    setAuthChecked(true);
     setShowModal(true);
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
     setShowDropdown(false);
-    setShowRoleSelector(true);
-    localStorage.removeItem("userRole");
+    setShowRoleSelector(false);
+    localStorage.removeItem("selectedRole");
+    setUserRole(null);
     navigate("/");
   };
 
@@ -142,23 +235,38 @@ function App() {
   };
 
   const renderNavItems = () => {
-    if (userRole === "collector") {
+    if (!isAuthenticated) {
       return [
         { label: "Home", path: "/" },
         { label: "Artworks", path: "/artworks" },
-        { label: "Cart", path: "/cart" },
-        { label: "Orders", path: "/orders" },
-        { label: "My information", path: "/profile" },
       ];
     }
 
-    return [
-      { label: "Home", path: "/" },
-      { label: "Artworks", path: "/artworks" },
-      { label: "My Inventory", path: "/artist/inventory" },
-      { label: "Add Artwork", path: "/artist/artworks/new" },
-    ];
+    const baseItems =
+      userRole === "artist"
+        ? [
+            { label: "Home", path: "/" },
+            { label: "Artworks", path: "/artworks" },
+            { label: "Artist Profile", path: "/artist/profile" },
+            { label: "Sales", path: "/artist/sales" },
+            { label: "Earnings", path: "/artist/payouts" },
+            { label: "My Inventory", path: "/artist/inventory" },
+            { label: "Add Artwork", path: "/artist/artworks/new" },
+          ]
+        : [
+            { label: "Home", path: "/" },
+            { label: "Artworks", path: "/artworks" },
+            { label: "Cart", path: "/cart" },
+            { label: "Orders", path: "/orders" },
+            { label: "My information", path: "/profile" },
+          ];
+
+    return baseItems;
   };
+
+  if (!authChecked) {
+    return null;
+  }
 
   return (
     <div
@@ -255,24 +363,114 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/artworks" element={<Artworks />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/orders" element={<Orders />} />
+          <Route
+            path="/signup"
+            element={
+              isAuthenticated ? <Navigate to="/" replace /> : <Login onLoginSuccess={handleLoginSuccess} />
+            }
+          />
+          <Route
+            path="/cart"
+            element={isAuthenticated ? <Cart /> : <Navigate to="/signup" replace />}
+          />
+          <Route
+            path="/checkout"
+            element={isAuthenticated ? <Checkout /> : <Navigate to="/signup" replace />}
+          />
+          <Route
+            path="/orders"
+            element={isAuthenticated ? <Orders /> : <Navigate to="/signup" replace />}
+          />
           <Route path="/order-success" element={<OrderSuccess />} />
           <Route path="/payment-success" element={<OrderSuccess />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route
+            path="/profile"
+            element={isAuthenticated ? <Profile /> : <Navigate to="/signup" replace />}
+          />
           <Route path="/artworks/:id" element={<ArtworkDetails />} />
           <Route
             path="/artist/inventory"
-            element={userRole === "artist" ? <ArtistInventory /> : <Navigate to="/" replace />}
+            element={
+              userRole === "artist" && isAuthenticated ? (
+                <ArtistInventory />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
           />
           <Route
             path="/artist/artworks/new"
-            element={userRole === "artist" ? <CreateArtwork /> : <Navigate to="/" replace />}
+            element={
+              userRole === "artist" && isAuthenticated ? (
+                <CreateArtwork />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
           />
           <Route
             path="/artist/artworks/edit/:id"
-            element={userRole === "artist" ? <EditArtwork /> : <Navigate to="/" replace />}
+            element={
+              userRole === "artist" && isAuthenticated ? (
+                <EditArtwork />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
+          <Route
+            path="/artist/sales"
+            element={
+              userRole === "artist" && isAuthenticated ? (
+                <ArtistSales />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
+          <Route
+            path="/artist/payouts"
+            element={
+              userRole === "artist" && isAuthenticated ? (
+                <ArtistPayouts />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
+          <Route
+            path="/artist/profile"
+            element={
+              userRole === "artist" && isAuthenticated ? (
+                <ArtistProfile />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              !isAuthenticated ? (
+                <AdminLogin onLoginSuccess={handleLoginSuccess} />
+              ) : isAdmin ? (
+                <AdminArtworks />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
+          <Route
+            path="/admin/payouts"
+            element={
+              !isAuthenticated ? (
+                <AdminLogin onLoginSuccess={handleLoginSuccess} />
+              ) : isAdmin ? (
+                <AdminPayouts />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
           />
         </Routes>
       )}

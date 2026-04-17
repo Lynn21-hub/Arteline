@@ -3,6 +3,12 @@ const prisma = new PrismaClient();
 const { PutObjectCommand } = require("@aws-sdk/client-s3");
 const s3 = require("../config/s3");
 
+// Simple admin check: compare user's sub with ADMIN_SUBS from env
+const isAdminUser = (userSub) => {
+  const adminSubs = (process.env.ADMIN_SUBS || "").split(",").map((s) => s.trim());
+  return userSub && adminSubs.includes(userSub);
+};
+
 exports.createArtwork = async (req, res) => {
   try {
     const userSub = req.user?.sub;
@@ -27,7 +33,8 @@ exports.createArtwork = async (req, res) => {
 
       await s3.send(command);
 
-      imageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+      const s3Region = process.env.AWS_S3_REGION || process.env.AWS_REGION;
+      imageUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${s3Region}.amazonaws.com/${key}`;
       s3_key = key;
     }
 
@@ -133,6 +140,12 @@ exports.updateArtwork = async (req, res) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
+    if (!isAdminUser(userSub)) {
+      return res.status(403).json({
+        message: "Only admin users can update artworks",
+      });
+    }
+
     const id = Number(req.params.id);
 
     const {
@@ -153,10 +166,6 @@ exports.updateArtwork = async (req, res) => {
 
     if (!existingArtwork) {
       return res.status(404).json({ message: "Artwork not found" });
-    }
-
-    if (existingArtwork.creator_sub && existingArtwork.creator_sub !== userSub) {
-      return res.status(403).json({ message: "You can only edit your own artworks" });
     }
 
     const updatedArtwork = await prisma.artwork.update({
@@ -188,6 +197,12 @@ exports.deleteArtwork = async (req, res) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
+    if (!isAdminUser(userSub)) {
+      return res.status(403).json({
+        message: "Only admin users can delete artworks",
+      });
+    }
+
     const id = Number(req.params.id);
 
     const existingArtwork = await prisma.artwork.findUnique({
@@ -196,10 +211,6 @@ exports.deleteArtwork = async (req, res) => {
 
     if (!existingArtwork) {
       return res.status(404).json({ message: "Artwork not found" });
-    }
-
-    if (existingArtwork.creator_sub && existingArtwork.creator_sub !== userSub) {
-      return res.status(403).json({ message: "You can only delete your own artworks" });
     }
 
     await prisma.artwork.delete({
