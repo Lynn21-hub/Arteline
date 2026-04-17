@@ -30,6 +30,9 @@ const searchRoutes = require("./routes/search");
 const cartRoutes = require("./routes/cartRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const artworkRoutes = require("./routes/artworkRoutes");
+const recommendationRoutes = require("./routes/recommendationRoutes");
+
+app.use("/api/recommendations", recommendationRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/cart", cartRoutes);
 app.use("/order", orderRoutes);
