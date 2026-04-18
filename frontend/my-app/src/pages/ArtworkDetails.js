@@ -3,6 +3,8 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { getArtworkById } from "../api/artworkAPI";
 import { addToCart } from "../api/cartAPI";
 import { getCurrentUser } from "aws-amplify/auth";
+import { getRecommendations } from "../api/recommendationAPI";
+import ArtworkCard from "../components/ArtworkCard";
 
 function ArtworkDetails() {
   const { id } = useParams();
@@ -10,6 +12,8 @@ function ArtworkDetails() {
   const [artwork, setArtwork] = useState(null);
   const [loading, setLoading] = useState(true);
   const [cartStatus, setCartStatus] = useState("idle");
+  const [recommendations, setRecommendations] = useState([]);
+  const [userId, setUserId] = useState(null);
 
   useEffect(() => {
     const fetchArtwork = async () => {
@@ -27,6 +31,22 @@ function ArtworkDetails() {
 
     fetchArtwork();
   }, [id]);
+
+  useEffect(() => {
+    const fetchUserAndRecommendations = async () => {
+      try {
+        const user = await getCurrentUser();
+        setUserId(user.username);
+        const recs = await getRecommendations(user.username);
+        setRecommendations(recs || []);
+      } catch (err) {
+        console.error("Error fetching recommendations:", err);
+        setRecommendations([]);
+      }
+    };
+
+    fetchUserAndRecommendations();
+  }, []);
 
   const handleAddToCart = async () => {
     if (!artwork || artwork.inventory <= 0) return;
@@ -176,6 +196,17 @@ function ArtworkDetails() {
             </div>
           </div>
         </div>
+
+        {recommendations.length > 0 && (
+          <div className="recommendations-section">
+            <h2 className="recommendations-title">You Might Also Like</h2>
+            <div className="recommendations-grid">
+              {recommendations.slice(0, 4).map((rec) => (
+                <ArtworkCard key={rec.id} artwork={rec} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
@@ -402,6 +433,25 @@ const css = `
     }
   }
 
+  .recommendations-section {
+    margin-top: 60px;
+    padding-top: 40px;
+    border-top: 1px solid #eee3d7;
+  }
+
+  .recommendations-title {
+    margin: 0 0 32px;
+    font-size: 32px;
+    font-family: Georgia, serif;
+    color: #111;
+  }
+
+  .recommendations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 24px;
+  }
+
   @media (max-width: 640px) {
     .details-page {
       padding: 24px 14px 50px;
@@ -421,6 +471,14 @@ const css = `
 
     .details-price {
       font-size: 28px;
+    }
+
+    .recommendations-title {
+      font-size: 24px;
+    }
+
+    .recommendations-grid {
+      grid-template-columns: 1fr;
     }
   }
 `;

@@ -22,7 +22,7 @@ function AuthForm({ onLoginSuccess, userRole, defaultToSignup = false }) {
           options: {
             userAttributes: {
               email: email,
-              'custom:userRole': userRole || 'collector', // Store role as custom attribute
+              'custom:userRole': 'collector',
             },
           },
         });

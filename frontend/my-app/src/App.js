@@ -1,10 +1,9 @@
 import "./App.css";
 import React, { useState, useEffect } from "react";
 import { Amplify } from "aws-amplify";
-import { fetchAuthSession, fetchUserAttributes, getCurrentUser } from "aws-amplify/auth";
+import { fetchAuthSession, getCurrentUser } from "aws-amplify/auth";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 
-import RoleSelector from "./components/RoleSelector";
 import Profile from "./pages/Profile";
 import Home from "./pages/Home";
 import AuthModal from "./components/AuthModal";
@@ -15,15 +14,13 @@ import Checkout from "./pages/Checkout";
 import Orders from "./pages/Orders";
 import OrderSuccess from "./pages/OrderSuccess";
 import ArtworkDetails from "./pages/ArtworkDetails";
-import ArtistInventory from "./pages/ArtistInventory";
+import ArtistDashboard from "./pages/ArtistDashboard";
 import CreateArtwork from "./pages/CreateArtwork";
 import EditArtwork from "./pages/EditArtwork";
 import AdminArtworks from "./pages/AdminArtworks";
 import AdminLogin from "./pages/AdminLogin";
 import Login from "./pages/Login";
 import ArtistProfile from "./pages/ArtistProfile";
-import ArtistSales from "./pages/ArtistSales";
-import ArtistPayouts from "./pages/ArtistPayouts";
 import AdminPayouts from "./pages/AdminPayouts";
 import { getMyArtistProfile } from "./api/artistAPI";
 
@@ -87,14 +84,12 @@ function App() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
+  const [isArtist, setIsArtist] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [userRole, setUserRole] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
-
-  const [showRoleSelector, setShowRoleSelector] = useState(false);
 
   // Check if current user is admin by calling backend
   const checkAdminStatus = async () => {
@@ -127,34 +122,29 @@ function App() {
     }
   };
 
-  const syncAuthenticatedRole = async () => {
-    const attributes = await fetchUserAttributes();
-    const selectedRole = localStorage.getItem("selectedRole");
-    const attributeRole = attributes["custom:userRole"];
-    const resolvedRole = selectedRole || attributeRole || "collector";
-
-    setUserRole(resolvedRole);
-
-    if (!selectedRole && attributeRole) {
-      localStorage.setItem("selectedRole", attributeRole);
+  const refreshArtistStatus = async () => {
+    try {
+      const profile = await getMyArtistProfile();
+      const isComplete = Boolean(profile?.displayName?.trim() && profile?.bio?.trim());
+      setIsArtist(isComplete);
+      return isComplete;
+    } catch (error) {
+      if (error?.response?.status !== 404) {
+        console.error("Error checking artist profile:", error);
+      }
+      setIsArtist(false);
+      return false;
     }
-
-    setShowRoleSelector(false);
-    
-    // Check if user is admin
-    await checkAdminStatus();
   };
 
   const checkUser = async () => {
     try {
       await getCurrentUser();
       setIsAuthenticated(true);
-      await syncAuthenticatedRole();
+      await Promise.all([checkAdminStatus(), refreshArtistStatus()]);
     } catch {
       setIsAuthenticated(false);
-      const storedRole = localStorage.getItem("selectedRole");
-      setUserRole(storedRole);
-      setShowRoleSelector(false);
+      setIsArtist(false);
       setIsAdmin(false);
     } finally {
       setAuthChecked(true);
@@ -166,51 +156,48 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const ensureArtistProfile = async () => {
-      if (!isAuthenticated || userRole !== "artist") {
+    const handleArtistProfileUpdated = async () => {
+      if (!isAuthenticated) {
+        return;
+      }
+      await refreshArtistStatus();
+    };
+
+    window.addEventListener("artist-profile-updated", handleArtistProfileUpdated);
+    return () => {
+      window.removeEventListener("artist-profile-updated", handleArtistProfileUpdated);
+    };
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    const syncArtistStatusOnArtistRoutes = async () => {
+      if (!isAuthenticated) {
         return;
       }
 
-      if (location.pathname === "/artist/profile") {
+      if (!location.pathname.startsWith("/artist")) {
         return;
       }
 
-      try {
-        const profile = await getMyArtistProfile();
-        const isComplete = Boolean(profile?.displayName?.trim() && profile?.bio?.trim());
+      const status = await refreshArtistStatus();
 
-        if (!isComplete) {
-          navigate("/artist/profile", { replace: true });
-        }
-      } catch (error) {
-        if (error?.response?.status === 404) {
-          navigate("/artist/profile", { replace: true });
-        }
+      if (!status && location.pathname !== "/artist/profile") {
+        navigate("/artist/profile", { replace: true });
       }
     };
 
-    ensureArtistProfile();
-  }, [isAuthenticated, userRole, location.pathname, navigate]);
+    syncArtistStatusOnArtistRoutes();
+  }, [isAuthenticated, location.pathname, navigate]);
 
   const handleLoginSuccess = async () => {
     await checkUser();
     setShowModal(false);
   };
 
-  const handleSelectRole = (role) => {
-    localStorage.setItem("selectedRole", role);
-    setUserRole(role);
-    setShowRoleSelector(false);
-    setAuthChecked(true);
-    setShowModal(true);
-  };
-
   const handleLogout = () => {
     setIsAuthenticated(false);
     setShowDropdown(false);
-    setShowRoleSelector(false);
-    localStorage.removeItem("selectedRole");
-    setUserRole(null);
+    setIsArtist(false);
     navigate("/");
   };
 
@@ -218,7 +205,7 @@ function App() {
     if (isAuthenticated) {
       setShowDropdown((prev) => !prev);
     } else {
-      setShowRoleSelector(true);
+      setShowModal(true);
     }
   };
 
@@ -243,19 +230,20 @@ function App() {
     }
 
     const baseItems =
-      userRole === "artist"
+      isArtist
         ? [
             { label: "Home", path: "/" },
             { label: "Artworks", path: "/artworks" },
+            { label: "Cart", path: "/cart" },
+            { label: "Orders", path: "/orders" },
             { label: "Artist Profile", path: "/artist/profile" },
-            { label: "Sales", path: "/artist/sales" },
-            { label: "Earnings", path: "/artist/payouts" },
-            { label: "My Inventory", path: "/artist/inventory" },
+            { label: "Artist Dashboard", path: "/artist/dashboard" },
             { label: "Add Artwork", path: "/artist/artworks/new" },
           ]
         : [
             { label: "Home", path: "/" },
             { label: "Artworks", path: "/artworks" },
+            { label: "Become an Artist", path: "/artist/profile" },
             { label: "Cart", path: "/cart" },
             { label: "Orders", path: "/orders" },
             { label: "My information", path: "/profile" },
@@ -276,9 +264,7 @@ function App() {
         fontFamily: "'Outfit', 'Poppins', Arial, sans-serif",
       }}
     >
-      {showRoleSelector && <RoleSelector onSelectRole={handleSelectRole} />}
-
-      {!showRoleSelector && (
+      {
         <div
           style={{
             position: "sticky",
@@ -349,17 +335,17 @@ function App() {
             {showDropdown && <ProfileDropdown onLogout={handleLogout} />}
           </div>
         </div>
-      )}
+      }
 
-      {!showRoleSelector && showModal && (
+      {showModal && (
         <AuthModal
           onClose={() => setShowModal(false)}
           onLoginSuccess={handleLoginSuccess}
-          userRole={userRole}
+          userRole="collector"
         />
       )}
 
-      {!showRoleSelector && (
+      {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/artworks" element={<Artworks />} />
@@ -389,62 +375,55 @@ function App() {
           />
           <Route path="/artworks/:id" element={<ArtworkDetails />} />
           <Route
-            path="/artist/inventory"
+            path="/artist/dashboard"
             element={
-              userRole === "artist" && isAuthenticated ? (
-                <ArtistInventory />
+              isArtist && isAuthenticated ? (
+                <ArtistDashboard />
               ) : (
-                <Navigate to="/" replace />
+                <Navigate to="/artist/profile" replace />
               )
             }
           />
+          <Route path="/artist/inventory" element={<Navigate to="/artist/dashboard" replace />} />
           <Route
             path="/artist/artworks/new"
             element={
-              userRole === "artist" && isAuthenticated ? (
+              isArtist && isAuthenticated ? (
                 <CreateArtwork />
               ) : (
-                <Navigate to="/" replace />
+                <Navigate to="/artist/profile" replace />
               )
             }
           />
           <Route
             path="/artist/artworks/edit/:id"
             element={
-              userRole === "artist" && isAuthenticated ? (
+              isArtist && isAuthenticated ? (
                 <EditArtwork />
               ) : (
-                <Navigate to="/" replace />
+                <Navigate to="/artist/profile" replace />
               )
             }
           />
           <Route
             path="/artist/sales"
             element={
-              userRole === "artist" && isAuthenticated ? (
-                <ArtistSales />
-              ) : (
-                <Navigate to="/" replace />
-              )
+              <Navigate to="/artist/dashboard" replace />
             }
           />
           <Route
             path="/artist/payouts"
             element={
-              userRole === "artist" && isAuthenticated ? (
-                <ArtistPayouts />
-              ) : (
-                <Navigate to="/" replace />
-              )
+              <Navigate to="/artist/dashboard" replace />
             }
           />
           <Route
             path="/artist/profile"
             element={
-              userRole === "artist" && isAuthenticated ? (
+              isAuthenticated ? (
                 <ArtistProfile />
               ) : (
-                <Navigate to="/" replace />
+                <Navigate to="/signup" replace />
               )
             }
           />
@@ -473,7 +452,7 @@ function App() {
             }
           />
         </Routes>
-      )}
+      }
     </div>
   );
 }

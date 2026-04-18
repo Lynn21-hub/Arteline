@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getCurrentUser } from "aws-amplify/auth";
 import { getAllArtworks } from "../api/artworkAPI";
 import { getFeaturedArtists } from "../api/artistAPI";
+import { getRecommendations } from "../api/recommendationAPI";
 
 /* ─── Category images (Unsplash) ─── */
 const CATEGORY_IMAGES = {
@@ -58,6 +60,8 @@ export default function Home() {
   const [artists, setArtists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [recommendations, setRecommendations] = useState([]);
+  const [userId, setUserId] = useState(null);
 
   useEffect(() => {
     const obs = new IntersectionObserver(
@@ -92,6 +96,22 @@ export default function Home() {
         setLoading(false);
       }
     })();
+  }, []);
+
+  useEffect(() => {
+    const fetchUserRecommendations = async () => {
+      try {
+        const user = await getCurrentUser();
+        setUserId(user.username);
+        const recs = await getRecommendations(user.username);
+        setRecommendations(recs || []);
+      } catch (err) {
+        // User not logged in or error fetching recommendations
+        setRecommendations([]);
+      }
+    };
+
+    fetchUserRecommendations();
   }, []);
 
   const categories = useMemo(() => {
@@ -418,6 +438,63 @@ export default function Home() {
           </div>
         )}
       </section>
+
+      {/* ── RECOMMENDED FOR YOU ── */}
+      {userId && recommendations.length > 0 && (
+        <section style={{ ...s.section, background: "#faf8f5" }}>
+          <div style={s.secHeaderRow} className="al-reveal">
+            <div>
+              <span style={s.secLabel}>Personalized</span>
+              <h2 style={s.secTitle}>
+                Recommended <em style={{ fontStyle: "italic", color: "#c9a84c" }}>For You</em>
+              </h2>
+            </div>
+            <span style={s.linkArrow} onClick={() => navigate("/artworks")}>
+              Explore more →
+            </span>
+          </div>
+
+          <div style={s.artGrid}>
+            {recommendations.slice(0, 4).map((art, i) => (
+              <div
+                key={art.id}
+                className={`al-art-card al-reveal al-delay-${i}`}
+                style={s.artCard}
+                onClick={() => navigate(`/artworks/${art.id}`)}
+              >
+                <div style={s.artImgWrap}>
+                  <img
+                    className="al-art-img"
+                    src={art.image_url}
+                    alt={art.title}
+                    style={s.artImg}
+                  />
+                  <span style={s.artTagBadge}>{art.category || "Recommended"}</span>
+                  <button
+                    className="al-wish"
+                    style={s.artWish}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    ♡
+                  </button>
+                  <div className="al-quick-buy" style={s.quickBuy}>
+                    View Artwork →
+                  </div>
+                </div>
+
+                <div style={s.artInfo}>
+                  <h3 style={s.artTitle}>{art.title}</h3>
+                  <p style={s.artArtist}>by {art.artist_name || "Unknown Artist"}</p>
+                  <div style={s.artBottom}>
+                    <span style={s.artPrice}>${Number(art.price).toLocaleString()}</span>
+                    {art.category && <span style={s.artMedium}>{art.category}</span>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ── WHY US ── */}
       <div style={s.whyStrip} className="al-reveal">
