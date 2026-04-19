@@ -1,5 +1,7 @@
 const prisma = require("../lib/prisma");
 
+const APPROVED_STATUS = "APPROVED";
+
 const requireArtistProfile = async (req, res, next) => {
   try {
     const userSub = req.user?.sub;
@@ -11,16 +13,15 @@ const requireArtistProfile = async (req, res, next) => {
     const profile = await prisma.artistProfile.findUnique({
       where: { creator_sub: userSub },
       select: {
-        display_name: true,
-        bio: true,
+        application_status: true,
       },
     });
 
-    const isApproved = Boolean(profile?.display_name?.trim() && profile?.bio?.trim());
+    const isApproved = profile?.application_status === APPROVED_STATUS;
 
     if (!isApproved) {
       return res.status(403).json({
-        message: "Please complete your artist application profile first",
+        message: "Your artist application is not approved yet",
       });
     }
 

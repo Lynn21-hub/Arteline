@@ -66,6 +66,9 @@ function AdminArtworks() {
           </div>
 
           <div className="admin-hero-actions">
+            <Link to="/admin/artist-applications" className="view-btn">
+              Artist Applications
+            </Link>
             <Link to="/admin/payouts" className="view-btn">
               Payout Queue
             </Link>

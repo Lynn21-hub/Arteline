@@ -43,3 +43,55 @@ export const upsertMyArtistProfile = async (payload) => {
 
   return response.data;
 };
+
+export const getAdminArtistApplications = async (status = "PENDING") => {
+  const token = await getToken();
+
+  if (!token) {
+    throw new Error("Missing ID token");
+  }
+
+  const response = await axios.get(`${API_URL}/api/artists/admin/applications`, {
+    headers: { Authorization: `Bearer ${token}` },
+    params: { status },
+  });
+
+  return response.data;
+};
+
+export const approveArtistApplication = async (id) => {
+  const token = await getToken();
+
+  if (!token) {
+    throw new Error("Missing ID token");
+  }
+
+  const response = await axios.patch(
+    `${API_URL}/api/artists/admin/applications/${id}/approve`,
+    {},
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+
+  return response.data;
+};
+
+export const rejectArtistApplication = async (id, rejectionReason) => {
+  const token = await getToken();
+
+  if (!token) {
+    throw new Error("Missing ID token");
+  }
+
+  const response = await axios.patch(
+    `${API_URL}/api/artists/admin/applications/${id}/reject`,
+    { rejectionReason },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  return response.data;
+};

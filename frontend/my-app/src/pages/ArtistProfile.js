@@ -18,6 +18,7 @@ function ArtistProfile() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [applicationStatus, setApplicationStatus] = useState("NOT_SUBMITTED");
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -33,6 +34,7 @@ function ArtistProfile() {
           instagram: profile.instagram || "",
           isPublished: typeof profile.isPublished === "boolean" ? profile.isPublished : true,
         });
+        setApplicationStatus(profile.applicationStatus || "PENDING");
       } catch (err) {
         if (err?.response?.status !== 404) {
           setError("Could not load profile. Please try again.");
@@ -75,8 +77,9 @@ function ArtistProfile() {
         instagram: form.instagram,
         isPublished: form.isPublished,
       });
+      setApplicationStatus("PENDING");
       window.dispatchEvent(new Event("artist-profile-updated"));
-      setMessage("Profile saved successfully.");
+      setMessage("Application submitted. It is now pending admin review.");
     } catch (err) {
       setError(err?.response?.data?.message || "Failed to save profile.");
     } finally {
@@ -94,7 +97,10 @@ function ArtistProfile() {
               <p className="artist-profile-kicker">ARTIST PROFILE</p>
               <h1>Build your public artist page</h1>
               <p className="artist-profile-sub">
-                Your profile appears in the homepage Featured Artists section once published.
+                Submit your profile to apply as an artist. Admin approval is required before selling.
+              </p>
+              <p className={`artist-profile-status artist-profile-status--${String(applicationStatus).toLowerCase()}`}>
+                Application status: {String(applicationStatus).replaceAll("_", " ")}
               </p>
             </div>
             <button className="artist-profile-secondary" onClick={() => navigate("/artist/inventory")}>My Inventory</button>
@@ -239,6 +245,33 @@ const css = `
     margin: 10px 0 0;
     color: rgba(13, 12, 10, 0.66);
     max-width: 540px;
+  }
+
+  .artist-profile-status {
+    margin: 10px 0 0;
+    display: inline-block;
+    padding: 7px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .artist-profile-status--approved {
+    background: #e8f6ec;
+    color: #237846;
+  }
+
+  .artist-profile-status--pending,
+  .artist-profile-status--not_submitted {
+    background: #fff4e8;
+    color: #a6621c;
+  }
+
+  .artist-profile-status--rejected {
+    background: #fbebeb;
+    color: #8a2f2f;
   }
 
   .artist-profile-form {

@@ -22,6 +22,7 @@ import AdminLogin from "./pages/AdminLogin";
 import Login from "./pages/Login";
 import ArtistProfile from "./pages/ArtistProfile";
 import AdminPayouts from "./pages/AdminPayouts";
+import AdminArtistApplications from "./pages/AdminArtistApplications";
 import { getMyArtistProfile } from "./api/artistAPI";
 
 Amplify.configure({
@@ -125,9 +126,9 @@ function App() {
   const refreshArtistStatus = async () => {
     try {
       const profile = await getMyArtistProfile();
-      const isComplete = Boolean(profile?.displayName?.trim() && profile?.bio?.trim());
-      setIsArtist(isComplete);
-      return isComplete;
+      const approved = profile?.applicationStatus === "APPROVED";
+      setIsArtist(approved);
+      return approved;
     } catch (error) {
       if (error?.response?.status !== 404) {
         console.error("Error checking artist profile:", error);
@@ -446,6 +447,18 @@ function App() {
                 <AdminLogin onLoginSuccess={handleLoginSuccess} />
               ) : isAdmin ? (
                 <AdminPayouts />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
+          <Route
+            path="/admin/artist-applications"
+            element={
+              !isAuthenticated ? (
+                <AdminLogin onLoginSuccess={handleLoginSuccess} />
+              ) : isAdmin ? (
+                <AdminArtistApplications />
               ) : (
                 <Navigate to="/" replace />
               )
