@@ -24,6 +24,7 @@ import ArtistProfile from "./pages/ArtistProfile";
 import AdminPayouts from "./pages/AdminPayouts";
 import AdminArtistApplications from "./pages/AdminArtistApplications";
 import { getMyArtistProfile } from "./api/artistAPI";
+import { API_URL } from "./api/config";
 
 Amplify.configure({
   Auth: {
@@ -103,7 +104,7 @@ function App() {
         return;
       }
       
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || "http://localhost:5001"}/api/auth/is-admin`, {
+      const response = await fetch(`${API_URL}/api/auth/is-admin`, {
         headers: {
           Authorization: `Bearer ${idToken}`,
         },
