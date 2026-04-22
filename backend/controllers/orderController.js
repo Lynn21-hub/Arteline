@@ -82,7 +82,6 @@ const createStripeCheckoutSession = async (req, res) => {
         currency: "usd",
         product_data: {
           name: item.title,
-          images: item.imageUrl ? [item.imageUrl] : [],
         },
         unit_amount: Math.round(Number(item.price) * 100),
       },
