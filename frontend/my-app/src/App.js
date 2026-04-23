@@ -25,6 +25,7 @@ import AdminPayouts from "./pages/AdminPayouts";
 import AdminArtistApplications from "./pages/AdminArtistApplications";
 import { getMyArtistProfile } from "./api/artistAPI";
 import { API_URL } from "./api/config";
+import ForgotPassword from "./components/ForgotPassword";
 
 Amplify.configure({
   Auth: {
@@ -297,7 +298,25 @@ function App() {
             Arté<span style={{ color: artelineColors.gold, fontStyle: "italic" }}>line</span>
           </div>
 
+
+          {/* Hamburger for mobile */}
+          <button
+            className="mobile-nav-toggle"
+            aria-label="Open navigation menu"
+            onClick={() => setShowDropdown((open) => !open)}
+            style={{
+              display: "none",
+              background: "none",
+              border: "none",
+              fontSize: 28,
+              cursor: "pointer",
+            }}
+          >
+            &#9776;
+          </button>
+
           <div
+            className={`nav-items${showDropdown ? " nav-items--open" : ""}`}
             style={{
               display: "flex",
               alignItems: "center",
@@ -311,7 +330,10 @@ function App() {
               <button
                 key={item.label}
                 className="nav-btn"
-                onClick={() => navigate(item.path)}
+                onClick={() => {
+                  setShowDropdown(false);
+                  navigate(item.path);
+                }}
                 style={getNavStyle(item.path)}
               >
                 {item.label}
@@ -465,6 +487,7 @@ function App() {
               )
             }
           />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
         </Routes>
       }
     </div>

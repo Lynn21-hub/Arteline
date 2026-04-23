@@ -498,20 +498,19 @@ export default function Home() {
 
       {/* ── WHY US ── */}
       <div style={s.whyStrip} className="al-reveal">
-        {[
-          { icon: "🔒", title: "Secure Payments", desc: "Escrow-protected. Funds released only after delivery." },
-          { icon: "📜", title: "Certificate of Authenticity", desc: "Every original ships with a signed, verified certificate." },
-          { icon: "🚚", title: "Insured Global Shipping", desc: "Professionally packed and fully insured from studio to door." },
-          { icon: "↩️", title: "14-Day Returns", desc: "Not what you expected? Free returns, no questions asked." },
+        {[ 
+          { title: "Direct From Artists", desc: "Buy directly from independent artists. 90% of every sale goes to the creator." },
+          { title: "Verified Originals & Prints", desc: "Every piece is unique or a signed print. Artists set their own prices." },
+          { title: "Global Community", desc: "Join a worldwide network of creators and collectors." },
         ].map((w, i) => (
           <div
             key={w.title}
             style={{
               ...s.whyItem,
-              borderRight: i < 3 ? "1px solid rgba(13,12,10,0.08)" : "none",
+              borderRight: i < 2 ? "1px solid rgba(13,12,10,0.08)" : "none",
             }}
           >
-            <span style={s.whyIcon}>{w.icon}</span>
+            {/* <span style={s.whyIcon}>{w.icon}</span> */}
             <div>
               <p style={s.whyTitle}>{w.title}</p>
               <p style={s.whyDesc}>{w.desc}</p>

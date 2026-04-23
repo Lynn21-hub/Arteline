@@ -104,6 +104,15 @@ function AuthForm({ onLoginSuccess, userRole, defaultToSignup = false }) {
           </p>
         )}
 
+        {/* Forgot Password Link */}
+        {!isSignup && !adminMode && (
+          <div style={{ marginBottom: 16 }}>
+            <a href="/forgot-password" style={{ color: '#c9a84c', textDecoration: 'underline', fontSize: 14 }}>
+              Forgot Password?
+            </a>
+          </div>
+        )}
+
       </form>
     </div>
   );

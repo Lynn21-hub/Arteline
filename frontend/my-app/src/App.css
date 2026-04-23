@@ -1,3 +1,42 @@
+.mobile-nav-toggle {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .navbar {
+    flex-wrap: wrap;
+    padding: 14px 10px;
+  }
+  .nav-items {
+    display: none !important;
+    flex-direction: column;
+    width: 100%;
+    background: rgba(247,243,237,0.98);
+    position: absolute;
+    left: 0;
+    top: 100%;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    border-bottom: 1px solid #eee;
+    z-index: 999;
+    padding: 18px 0 10px 0;
+    gap: 0;
+  }
+  .nav-items.nav-items--open {
+    display: flex !important;
+  }
+  .mobile-nav-toggle {
+    display: block !important;
+    margin-left: 18px;
+  }
+  .nav-btn {
+    width: 100%;
+    text-align: left;
+    padding: 12px 24px;
+    border-bottom: 1px solid #eee;
+    font-size: 18px;
+    background: none;
+  }
+}
 .App {
   text-align: center;
 }

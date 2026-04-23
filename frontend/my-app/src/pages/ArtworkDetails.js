@@ -192,7 +192,7 @@ function ArtworkDetails() {
                 {addToCartLabel}
               </button>
 
-              <button className="secondary-btn">Add to Wishlist</button>
+              {/* Add to Wishlist button removed as requested */}
             </div>
           </div>
         </div>
