@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "arteline_bucket" {
-  bucket = "arteline-bucket-cloud" 
+  bucket = "arteline-artworks" 
 
   tags = {
     Name = "Arteline Bucket"
@@ -27,17 +27,39 @@ resource "aws_s3_bucket_policy" "public_read" {
   bucket = aws_s3_bucket.arteline_bucket.id
 
   policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Sid    = "PublicReadGetObject",
-        Effect = "Allow",
-        Principal = "*",
-        Action = "s3:GetObject",
-        Resource = "${aws_s3_bucket.arteline_bucket.arn}/*"
-      }
-    ]
-  })
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Sid": "AllowLeaRoleToAccessBucket",
+			"Effect": "Allow",
+			"Principal": {
+				"AWS": "arn:aws:iam::848211333656:role/arteline-backend-role"
+			},
+			"Action": "s3:ListBucket",
+			"Resource": "arn:aws:s3:::arteline-artworks"
+		},
+		{
+			"Sid": "PublicReadObjects",
+			"Effect": "Allow",
+			"Principal": "*",
+			"Action": "s3:GetObject",
+			"Resource": "arn:aws:s3:::arteline-artworks/*"
+		},
+		{
+			"Sid": "AllowLeaRoleToAccessObjects",
+			"Effect": "Allow",
+			"Principal": {
+				"AWS": "arn:aws:iam::848211333656:role/arteline-backend-role"
+			},
+			"Action": [
+				"s3:GetObject",
+				"s3:PutObject",
+				"s3:DeleteObject"
+			],
+			"Resource": "arn:aws:s3:::arteline-artworks/*"
+		}
+	]
+})
 }
 
 resource "aws_iam_role" "s3_role" {
